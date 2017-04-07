@@ -1,0 +1,26 @@
+{
+  "context-menu": {
+    "atom-text-editor": [
+      {
+        "label": "Toggle sakhe",
+        "command": "sakhe:toggle"
+      }
+    ]
+  },
+  "menu": [
+    {
+      "label": "Packages",
+      "submenu": [
+        {
+          "label": "sakhe",
+          "submenu": [
+            {
+              "label": "Toggle",
+              "command": "sakhe:toggle"
+            }
+          ]
+        }
+      ]
+    }
+  ]
+}

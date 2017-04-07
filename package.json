@@ -1,0 +1,16 @@
+{
+  "name": "sakhe",
+  "main": "./lib/sakhe",
+  "version": "0.0.0",
+  "description": "A short description of your package",
+  "keywords": [],
+  "repository": "https://github.com/atom/sakhe",
+  "license": "MIT",
+  "engines": {
+    "atom": ">=1.0.0 <2.0.0"
+  },
+  "dependencies": {
+    "debug": "^2.6.3",
+    "most": "^1.2.2"
+  }
+}

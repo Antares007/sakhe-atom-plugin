@@ -1,6 +1,6 @@
 {
   "name": "sakhe",
-  "main": "./lib/sakhe",
+  "main": "./lib/arakela-world-count",
   "version": "0.0.0",
   "description": "A short description of your package",
   "keywords": [],
@@ -11,6 +11,7 @@
   },
   "dependencies": {
     "debug": "^2.6.3",
-    "most": "^1.2.2"
+    "most": "^1.2.2",
+    "snabbdom": "^0.6.7"
   }
 }

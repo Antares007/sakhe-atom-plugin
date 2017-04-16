@@ -1,6 +1,8 @@
 module.exports = function ({DOM}) {
-  const {most, h} = this
+  const {h} = DOM.h
+  const {of} = this
   return {
+    Subscribe: of(DOM.tap(console.log.bind(console))),
     DOM: DOM
       .map(({action}) => parseInt(action, 10))
       .scan((a, x) => a + x, 0)

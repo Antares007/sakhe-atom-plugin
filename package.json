@@ -12,6 +12,8 @@
   "dependencies": {
     "debug": "^2.6.3",
     "most": "^1.2.2",
-    "snabbdom": "^0.6.7"
+    "ramda": "^0.23.0",
+    "snabbdom": "^0.6.7",
+    "union-type": "^0.3.3"
   }
 }

@@ -1,7 +1,6 @@
-const React = require('react')
-const { Component } = React
+const { Component } = require('react')
 const PropTypes = require('prop-types')
-const h = React.createElement.bind(React)
+const h = require('react-hyperscript')
 
 const Knight = require('./Knight')
 const Square = require('./Square')
@@ -24,7 +23,7 @@ class Board extends Component {
     for (let i = 0; i < 64; i++) {
       squares.push(this.renderSquare(i))
     }
-    return h('div', {style: {
+    return h('div.board', {style: {
       width: '100%',
       height: '100%',
       display: 'flex',

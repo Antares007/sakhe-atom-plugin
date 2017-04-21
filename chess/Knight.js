@@ -1,7 +1,6 @@
-const React = require('react')
-const h = React.createElement.bind(React)
+const h = require('react-hyperscript')
 
 function Knight () {
-  return h('span', null, '♘')
+  return h('span.knight', '♘')
 }
 module.exports = Knight

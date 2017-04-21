@@ -16,6 +16,7 @@
     "ramda": "^0.23.0",
     "react": "^15.5.4",
     "react-dom": "^15.5.4",
+    "react-hyperscript": "^3.0.0",
     "snabbdom": "^0.6.7",
     "union-type": "^0.3.3"
   }

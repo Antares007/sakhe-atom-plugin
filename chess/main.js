@@ -1,6 +1,5 @@
-const React = require('react')
 const ReactDOM = require('react-dom')
-const h = React.createElement.bind(React)
+const h = require('react-hyperscript')
 
 const Board = require('./Board')
 

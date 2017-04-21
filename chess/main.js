@@ -2,8 +2,11 @@ const ReactDOM = require('react-dom')
 const h = require('react-hyperscript')
 
 const Board = require('./Board')
+const {observe} = require('./game')
 
-ReactDOM.render(
-  h(Board, {knightPosition: [4, 4]}),
-  document.getElementById('root-node')
+observe(knightPosition =>
+  ReactDOM.render(
+    h(Board, {knightPosition}),
+    document.getElementById('root-node')
+  )
 )

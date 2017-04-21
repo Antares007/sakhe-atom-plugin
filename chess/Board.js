@@ -4,8 +4,14 @@ const h = require('react-hyperscript')
 
 const Knight = require('./Knight')
 const Square = require('./Square')
+const {moveKnight, canMoveKnight} = require('./game')
 
 class Board extends Component {
+  handleSquareClick (toX, toY) {
+    if (canMoveKnight(toX, toY)) {
+      moveKnight(toX, toY)
+    }
+  }
   renderSquare (i) {
     const x = i % 8
     const y = Math.floor(i / 8)
@@ -13,9 +19,11 @@ class Board extends Component {
     const [knightX, knightY] = this.props.knightPosition
     const piece = (x === knightX && y === knightY) ? h(Knight) : null
 
-    return h('div', {key: i, style: { width: '12.5%', height: '12.5%' }},
-      h(Square, {black}, piece)
-    )
+    return h('div', {
+      key: i,
+      style: { width: '12.5%', height: '12.5%' },
+      onClick: () => this.handleSquareClick(x, y)
+    }, h(Square, {black}, piece))
   }
 
   render () {
@@ -23,12 +31,14 @@ class Board extends Component {
     for (let i = 0; i < 64; i++) {
       squares.push(this.renderSquare(i))
     }
-    return h('div.board', {style: {
-      width: '100%',
-      height: '100%',
-      display: 'flex',
-      flexWrap: 'wrap'
-    }}, squares)
+    return h('div.board', {
+      style: {
+        width: '100%',
+        height: '100%',
+        display: 'flex',
+        flexWrap: 'wrap'
+      }
+    }, squares)
   }
 }
 Board.propTypes = {

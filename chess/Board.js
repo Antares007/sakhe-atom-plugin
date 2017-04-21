@@ -3,8 +3,10 @@ const PropTypes = require('prop-types')
 const h = require('react-hyperscript')
 
 const Knight = require('./Knight')
-const Square = require('./Square')
+const BoardSquare = require('./BoardSquare')
 const {moveKnight, canMoveKnight} = require('./game')
+const { DragDropContext } = require('react-dnd')
+const HTML5Backend = require('react-dnd-html5-backend').default
 
 class Board extends Component {
   handleSquareClick (toX, toY) {
@@ -15,17 +17,19 @@ class Board extends Component {
   renderSquare (i) {
     const x = i % 8
     const y = Math.floor(i / 8)
-    const black = (x + y) % 2 === 1
-    const [knightX, knightY] = this.props.knightPosition
-    const piece = (x === knightX && y === knightY) ? h(Knight) : null
-
-    return h('div', {
-      key: i,
-      style: { width: '12.5%', height: '12.5%' },
-      onClick: () => this.handleSquareClick(x, y)
-    }, h(Square, {black}, piece))
+    return (
+      h('div', {
+        key: i,
+        style: { width: '12.5%', height: '12.5%' }
+      }, h(BoardSquare, {x, y}, this.renderPiece(x, y)))
+    )
   }
-
+  renderPiece (x, y) {
+    const [knightX, knightY] = this.props.knightPosition
+    if (x === knightX && y === knightY) {
+      return h(Knight)
+    }
+  }
   render () {
     const squares = []
     for (let i = 0; i < 64; i++) {
@@ -46,4 +50,5 @@ Board.propTypes = {
     PropTypes.number.isRequired
   ).isRequired
 }
-module.exports = Board
+
+module.exports = DragDropContext(HTML5Backend)(Board)

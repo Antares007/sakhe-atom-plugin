@@ -4,6 +4,7 @@ const h = require('react-hyperscript')
 const { DragSource } = require('react-dnd')
 
 const { ItemTypes } = require('./Constants')
+const imgStr = require('./img')
 
 const knightSource = {
   beginDrag (props) {
@@ -14,11 +15,17 @@ const knightSource = {
 function collect (connect, monitor) {
   return {
     connectDragSource: connect.dragSource(),
+    connectDragPreview: connect.dragPreview(),
     isDragging: monitor.isDragging()
   }
 }
 
 class Knight extends Component {
+  componentDidMount () {
+    const img = new window.Image()
+    img.src = imgStr
+    img.onload = () => this.props.connectDragPreview(img)
+  }
   render () {
     const { connectDragSource, isDragging } = this.props
     return connectDragSource(

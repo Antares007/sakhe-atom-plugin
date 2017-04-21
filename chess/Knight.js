@@ -1,8 +1,9 @@
 const { Component } = require('react')
 const PropTypes = require('prop-types')
 const h = require('react-hyperscript')
-const { ItemTypes } = require('./Constants')
 const { DragSource } = require('react-dnd')
+
+const { ItemTypes } = require('./Constants')
 
 const knightSource = {
   beginDrag (props) {

@@ -1,5 +1,4 @@
-const React = require('react')
-const { Component } = React
+const { Component } = require('react')
 const PropTypes = require('prop-types')
 const h = require('react-hyperscript')
 

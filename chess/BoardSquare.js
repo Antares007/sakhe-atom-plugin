@@ -1,10 +1,10 @@
-const React = require('react')
-const { Component } = React
+const { Component } = require('react')
 const PropTypes = require('prop-types')
 const h = require('react-hyperscript')
+const { DropTarget } = require('react-dnd')
+
 const { canMoveKnight, moveKnight } = require('./game')
 const { ItemTypes } = require('./Constants')
-const { DropTarget } = require('react-dnd')
 const Square = require('./Square')
 
 const squareTarget = {
@@ -40,12 +40,7 @@ class BoardSquare extends Component {
     })
   }
   render () {
-    var props = this.props
-    var x = props.x
-    var y = props.y
-    var connectDropTarget = props.connectDropTarget
-    var isOver = props.isOver
-    var canDrop = props.canDrop
+    const {x, y, connectDropTarget, isOver, canDrop} = this.props
     var black = (x + y) % 2 === 1
 
     return connectDropTarget(

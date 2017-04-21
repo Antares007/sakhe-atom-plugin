@@ -1,12 +1,12 @@
 const { Component } = require('react')
 const PropTypes = require('prop-types')
 const h = require('react-hyperscript')
+const { DragDropContext } = require('react-dnd')
+const HTML5Backend = require('react-dnd-html5-backend')
 
 const Knight = require('./Knight')
 const BoardSquare = require('./BoardSquare')
 const {moveKnight, canMoveKnight} = require('./game')
-const { DragDropContext } = require('react-dnd')
-const HTML5Backend = require('react-dnd-html5-backend').default
 
 class Board extends Component {
   handleSquareClick (toX, toY) {
@@ -50,5 +50,4 @@ Board.propTypes = {
     PropTypes.number.isRequired
   ).isRequired
 }
-
 module.exports = DragDropContext(HTML5Backend)(Board)

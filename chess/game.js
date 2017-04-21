@@ -1,7 +1,7 @@
 let knightPosition = [1, 7]
 let observer = null
 
-module.exports = {
+const api = {
   observe (o) {
     if (observer) {
       throw new Error('Multiple observers not implemented.')
@@ -10,6 +10,7 @@ module.exports = {
     emitChange()
   },
   moveKnight (toX, toY) {
+    if (!api.canMoveKnight(toX, toY)) return
     knightPosition = [toX, toY]
     emitChange()
   },
@@ -22,6 +23,7 @@ module.exports = {
            (Math.abs(dx) === 1 && Math.abs(dy) === 2)
   }
 }
+module.exports = api
 
 function emitChange () {
   observer(knightPosition)

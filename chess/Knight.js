@@ -32,9 +32,10 @@ class Knight extends Component {
       h('div', {
         style: {
           opacity: isDragging ? 0.1 : 1,
-          fontSize: 25,
+          fontSize: 50,
           fontWeight: 'bold',
-          cursor: 'move'
+          cursor: 'move',
+          textAlign: 'center'
         }
       }, '♘')
     )

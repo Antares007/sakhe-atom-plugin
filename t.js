@@ -1,16 +1,30 @@
+const R = require('ramda')
+const Type = require('union-type')
+const most = require('most')
+const {div, h1, button} = require('./lib/hyperscript-helpers')
+
 module.exports = function ({DOM}) {
-  const {h} = DOM.h
-  const {of} = this
+  const Actions = Type({
+    IncrementBy: [Number],
+    DecrementBy: [Number],
+    MultiplyBy: [Number]
+  })
   return {
-    Subscribe: of(DOM.tap(console.log.bind(console))),
+    Subscribe: most.of(DOM.tap(console.log.bind(console))),
     DOM: DOM
-      .map(({action}) => parseInt(action, 10))
-      .scan((a, x) => a + x, 0)
+      .map(R.prop('action'))
+      .scan(R.flip(Actions.case({
+        IncrementBy: (by, state) => state + by,
+        DecrementBy: (by, state) => state - by,
+        MultiplyBy: (by, state) => state * by,
+        _: (state) => state
+      })), 0)
       .map(i =>
-        h('div', [
-          h('button', {on: {click: '-1'}}, 'Decrement'),
-          h('button', {on: {click: '1'}}, 'Increment'),
-          h('p', i)
+        div([
+          button({on: {click: Actions.DecrementBy(1)}}, 'Decrement'),
+          button({on: {click: Actions.IncrementBy(1)}}, 'Increment'),
+          button({on: {click: Actions.MultiplyBy(2)}}, 'MultiplyBy 2'),
+          h1(i)
         ])
       )
   }

@@ -10,6 +10,7 @@
     "atom": ">=1.0.0 <2.0.0"
   },
   "dependencies": {
+    "@most/hold": "^2.0.0",
     "debug": "^2.6.3",
     "most": "^1.2.2",
     "prop-types": "^15.5.8",

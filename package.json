@@ -12,6 +12,7 @@
   "dependencies": {
     "@most/hold": "^2.0.0",
     "debug": "^2.6.3",
+    "invariant": "^2.2.2",
     "most": "^1.2.2",
     "prop-types": "^15.5.8",
     "ramda": "^0.23.0",
@@ -21,6 +22,7 @@
     "react-dom": "^15.5.4",
     "react-hyperscript": "^3.0.0",
     "react-redux": "^5.0.4",
+    "sanctuary": "^0.12.2",
     "snabbdom": "^0.6.7",
     "union-type": "^0.3.3"
   }

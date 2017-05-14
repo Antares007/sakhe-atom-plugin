@@ -1,20 +1,32 @@
 const most = require('most')
-const runReact = require('./lib/run-react')
+const run = require('./lib/run')
 const rootNode = document.getElementById('root-node')
-const h = require('react-hyperscript')
+const h = require('snabbdom').h
+const makeSnabbdomDriver = require('./lib/drivers/snabbdom')
 
-const reactCycle = runReact(
-  function A (props) {
-    return h('h1', props.message)
-  },
-  rootNode
-)
-
-const sinks = reactCycle({
-  props$: most.of({message: 'message1', knightPosition: [1, 7]})
-    .merge(most.never())
-    // .until(most.of().delay(3000))
+const cycle = run(Counter, {
+  DOM: makeSnabbdomDriver(rootNode)
 })
+const sinks = cycle()
+const disposable = sinks.sinks$.source.run({
+  event: (t, e) => console.log('event', e),
+  error: (t, err) => console.log('error', err),
+  end: (t) => console.log('end')
+}, most.defaultScheduler)
 
-const disposable = sinks.action$.source.run({}, most.defaultScheduler)
 setTimeout(() => disposable.dispose(), 3000)
+
+function Counter ({DOM}) { // eslint-disable-line
+  return {
+    DOM: DOM.map(({action}) => action)
+      .filter(Number)
+      .scan((s, a) => s + a, 0)
+      .map(i =>
+        h('div', {style: {padding: '10px'}}, [
+          h('button', {on: {click: -1}}, 'Decrement'),
+          h('button', {on: {click: +1}}, 'Increment'),
+          h('h1', i)
+        ])
+      )
+  }
+}

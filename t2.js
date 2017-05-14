@@ -1,27 +1,10 @@
 const debug = require('debug')('main') // eslint-disable-line
-const R = require('ramda')
 const Main = require('./lib/main')
 const most = require('most')
-const {div, input, h1, b, button, span} = require('./lib/hyperscript-helpers')
+const {div, b, button, span} = require('./lib/hyperscript-helpers')
 const isolate = require('./lib/isolate')
-// const Type = require('union-type')
 
-module.exports = function ({DOM}) {
-  const name$ = DOM
-    .filter(R.whereEq({action: 'input'}))
-    .map(R.path(['event', 'target', 'value']))
-    .startWith('')
-  return {
-    DOM: name$.map(text =>
-      div([
-        input({props: {type: 'text'}, on: {input: 'input'}}),
-        h1('hello ' + text)
-      ])
-    )
-  }
-}
-
-function mainFunctionMonadLaws (sources) { // eslint-disable-line
+module.exports = function mainFunctionMonadLaws (sources) { // eslint-disable-line
   const M = (main) => Main.of(main)
   const bind = (M, f) => Main.chain(f, M)
   const unit = Main.of

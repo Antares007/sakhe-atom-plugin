@@ -7,59 +7,75 @@ function A (f) {
     return f(as)
   }
 }
+const Type = (is, coerce) => ({
+  is,
+  validate (x) { if (!is(x)) throw TypeError(is.toString()) },
+  coerce (x) { return is(x) ? x : (coerce ? coerce.call(this, x) : this.validate(x)) }
+})
+const $Type = (type) => ({
+  is ($) { return $.map(type.is) },
+  validate ($) { return $.tap(type.validate) },
+  coerce ($) { return $.map(type.coerce.bind(type)) }
+})
 
+// typeOfvdom$.coerce(m.of({})).observe(x => console.log(x))
 main()
 function main () {
+  const m = require('most')
   const snabbdom = require('snabbdom')
   const h = snabbdom.h
   const h$ = (...args) => m.of(h(...args))
-  const m = require('most')
+  const vdomType = Type(
+    x => !!(x && typeof x.sel === 'string'),
+    x => h('div.node', x + '')
+  )
+  const functionType = Type(x => typeof x === 'function')
+  const vdom$Type = $Type(vdomType)
+  const function$Type = $Type(functionType)
 
-  const VdomTree = A((vnode$s) => {
-    if (vnode$s.some(x => !x || !x.source || !x.source.run)) {
-      throw TypeError(VdomTree.toString())
-    }
-    const vnode$ = m.combineArray((...vnodes) => {
-      const vnode = h('div.node', vnodes.map((x, i) => {
-        if (x && typeof x.sel === 'string') {
-          return Object.assign(x, {key: i})
+  const VdomTree = A(([head, ...tail]) =>
+    vdom$Type.validate(
+      function$Type.validate(head)
+        .ap(m.combineArray((...vnodes) =>
+          vnodes.map((vnode, i) => Object.assign({}, vnode, {key: i})),
+          tail.map(vdom$Type.coerce)
+        ))
+    )
+  )
+  function TestHeart (d = 0) {
+    const tick$ = m.periodic(10)
+      .scan(a => a + 1, 0)
+      .map(i => Math.floor(20 + Math.sin(i / 100) * 20))
+      .skipRepeats()
+      .multicast()
+    return function (push, path, $) {
+      $.observe(debug(path))
+      push(tick$.map(i => children =>
+        h('div.node', {
+          style: {paddingLeft: (i) + 'px'}
+        }, children)
+      ))
+      push(h$('button', { on: { click: path } }, [ h('b', path) ]))
+      for (let i = 0; i < 2; i++) {
+        if (d < 2) {
+          this.node(TestHeart(d + 1))
         }
-        return h('div.type-error', {key: i}, x + '')
-      }))
-      return vnode
-    }, vnode$s)
-    return vnode$
-  })
-
-  const heart = function heart (push, $, path) {
-    const btn = n => h$('button', { on: { click: 'action' + n } }, [
-      h('h1', 'Hi' + n)
-    ])
-    $.observe(debug(path))
-    push(btn(path))
-    this.node(function (push, $, path) {
-      $.observe(debug(path))
-      push(btn(path))
-      this.node(function (push, $, path) {
-        $.observe(debug(path))
-        push(btn(path))
-      })
-    })
-    this.node(function (push, $, path) {
-      $.observe(debug(path))
-      push(btn(path))
-    })
+      }
+    }
   }
+
   const actionModule = require('../lib/drivers/snabbdom/actionModule')
 
   const vnode$ = VdomTree(
-    addInputs(actionModule.action$,
-      addPathToNodeInput(
-        mapInputs(args => [
-          ...args.slice(0, 2),
-          args[2] ? '/' + args[2].join('/') : '/'
-        ],
-          heart
+    addPathInput(
+      addInput(prev => prev || actionModule.action$,
+        mapInputs(
+          ([push, path, $]) => [
+            push,
+            '/' + path.join('/'),
+            $.filter(x => x.action.startsWith('/' + path.join('/')))
+          ],
+          TestHeart()
         )
       )
     )
@@ -71,26 +87,32 @@ function main () {
     actionModule
   ])
 
-  function mapInputs (f, heart) {
+  function mapInputs (f, heart, p) {
     return function (...args) {
       heart.apply({
-        node: heart => { this.node(mapInputs(f, heart)) }
+        node: heart => this.node(mapInputs(f, heart))
       }, f(args))
     }
   }
-  function addInputs (xs, heart) {
+  function addInput (map, heart, initial = void 0) {
     return function (...args) {
-      const node = (xs, heart) => { this.node(addInputs(xs, heart)) }
-      heart.apply({node: node.bind(this, xs)}, args.concat(xs))
+      const input = map(initial)
+      heart.apply({
+        node: heart => {
+          this.node(addInput(map, heart, input))
+        }
+      }, [...args, input])
     }
   }
-  function addPathToNodeInput (heart, path = []) {
+  function addPathInput (heart, path = []) {
     return function (...args) {
-      const node = (heart, i) => {
-        this.node(addPathToNodeInput(heart, [...path, i]))
-      }
       var i = 0
-      heart.apply({ node: heart => { node(heart, i++) } }, args.concat([path]))
+      heart.apply({
+        node: heart => {
+          this.node(addPathInput(heart, [...path, i]))
+          i++
+        }
+      }, args.concat([path]))
     }
   }
 }
@@ -98,21 +120,7 @@ function main () {
 function SnabbdomRootNode (elm, vnode$, modules) {
   const patch = require('snabbdom').init(modules)
   vnode$
-    .tap(function () {
-      var ident = ''
-      const logVnode = vnode => {
-        debug('patch')(ident + vnode.sel + '(' + (vnode.scopes ? vnode.scopes.toString() : '') + ')')
-      }
-      return function visitChildren (vnode) {
-        logVnode(vnode)
-        if (vnode.children) {
-          ident = ident + '  '
-          vnode.children.forEach(visitChildren)
-          ident = ident.slice(-2)
-        }
-      }
-    }())
-    .tap(debug('patch'))
+    // .tap(debug('patch'))
     .reduce(patch, elm)
   // const Nil = {
   //   toString () {

@@ -1,78 +1,79 @@
 const debug = require('debug')
+const m = require('most')
+const snabbdom = require('snabbdom')
+const h = snabbdom.h
+const h$ = (...args) => m.of(h(...args))
 
-function A (f) {
-  return function a (heart) {
-    const as = []
-    heart.call({ node: heart => { as.push(a(heart)) } }, a => as.push(a))
-    return f(as)
+const ring = SnabbdomBark(elm, function pith (...rays) {
+  rays[0].push(m.of(children => h('div', children)))
+  rays[0].push(h$(h('h1', 'hi')))
+})
+
+function TestHeart (d = 0, delay = 0) {
+  const tick$ = m.periodic(2000).delay(delay)
+    .scan(a => a + 1, 0)
+    .map(i => Math.floor(30 + Math.sin(i / 50) * 30))
+    .skipRepeats()
+    .multicast()
+  return function (push, path, $) {
+    $.observe(debug(path))
+    push(tick$.map(i => children =>
+      h('div.node', {
+        style: {paddingLeft: i + 'px'}
+      }, children)
+    ))
+    push(h$('button', { on: { click: path } }, [ h('b', path) ]))
+    for (let i = 0; i < 2; i++) {
+      if (d < 5) {
+        push(ring(TestHeart(d + 1, d * 500 + i * 200)))
+      }
+    }
   }
 }
-const Type = (is, coerce) => ({
-  is,
-  validate (x) { if (!is(x)) throw TypeError(is.toString()) },
-  coerce (x) { return is(x) ? x : (coerce ? coerce.call(this, x) : this.validate(x)) }
-})
-const $Type = (type) => ({
-  is ($) { return $.map(type.is) },
-  validate ($) { return $.tap(type.validate) },
-  coerce ($) { return $.map(type.coerce.bind(type)) }
-})
 
-// typeOfvdom$.coerce(m.of({})).observe(x => console.log(x))
-main()
-function main () {
+function VdomRing () {
   const m = require('most')
-  const snabbdom = require('snabbdom')
-  const h = snabbdom.h
-  const h$ = (...args) => m.of(h(...args))
+  const h = require('snabbdom/h')
+  const Type = (is, coerce) => ({
+    is,
+    validate (x) { if (!is(x)) throw TypeError(is.toString()) },
+    coerce (x) { return is(x) ? x : (coerce ? coerce.call(this, x) : this.validate(x)) }
+  })
+  const $Type = (type) => ({
+    is ($) { return $.map(type.is) },
+    validate ($) { return $.tap(type.validate) },
+    coerce ($) { return $.map(type.coerce.bind(type)) }
+  })
   const vdomType = Type(
     x => !!(x && typeof x.sel === 'string'),
-    x => h('div.node', x + '')
+    x => h('div', x + '')
   )
   const functionType = Type(x => typeof x === 'function')
   const vdom$Type = $Type(vdomType)
   const function$Type = $Type(functionType)
-
-  const VdomTree = A(([head, ...tail]) =>
-    vdom$Type.validate(
-      function$Type.validate(head)
-        .ap(m.combineArray((...vnodes) =>
-          vnodes.map((vnode, i) => Object.assign({}, vnode, {key: i})),
-          tail.map(vdom$Type.coerce)
-        ))
-    )
+  const Tree = require('./tree')
+  const ring = Tree(
+    ([head, ...tail]) =>
+      vdom$Type.validate(
+        function$Type.validate(head)
+          .ap(m.combineArray((...vnodes) =>
+            vnodes.map((vnode, i) => Object.assign({}, vnode, {key: i})),
+            tail.map(vdom$Type.coerce)
+          ))
+      )
   )
-  function TestHeart (d = 0) {
-    const tick$ = m.periodic(10)
-      .scan(a => a + 1, 0)
-      .map(i => Math.floor(20 + Math.sin(i / 100) * 20))
-      .skipRepeats()
-      .multicast()
-    return function (push, path, $) {
-      $.observe(debug(path))
-      push(tick$.map(i => children =>
-        h('div.node', {
-          style: {paddingLeft: (i) + 'px'}
-        }, children)
-      ))
-      push(h$('button', { on: { click: path } }, [ h('b', path) ]))
-      for (let i = 0; i < 2; i++) {
-        if (d < 2) {
-          this.node(TestHeart(d + 1))
-        }
-      }
-    }
-  }
+  return ring
+}
 
+function SnabbdomBark (ring) {
   const actionModule = require('../lib/drivers/snabbdom/actionModule')
-
-  const vnode$ = VdomTree(
+  const vnode$ =
+  ring(
     addPathInput(
       addInput(prev => prev || actionModule.action$,
         mapInputs(
           ([push, path, $]) => [
-            push,
-            '/' + path.join('/'),
+            push, '/' + path.join('/'),
             $.filter(x => x.action.startsWith('/' + path.join('/')))
           ],
           TestHeart()
@@ -80,13 +81,6 @@ function main () {
       )
     )
   )
-
-  SnabbdomRootNode(document.getElementById('root-node'), vnode$, [
-    ...['class', 'props', 'style']
-      .map(name => require('snabbdom/modules/' + name).default),
-    actionModule
-  ])
-
   function mapInputs (f, heart, p) {
     return function (...args) {
       heart.apply({
@@ -109,12 +103,18 @@ function main () {
       var i = 0
       heart.apply({
         node: heart => {
-          this.node(addPathInput(heart, [...path, i]))
+          this.node(addPathInput(heart, path.concat(i)))
           i++
         }
       }, args.concat([path]))
     }
   }
+
+  SnabbdomRootNode(document.getElementById('root-node'), vnode$, [
+    ...['class', 'props', 'style']
+      .map(name => require('snabbdom/modules/' + name).default),
+    actionModule
+  ])
 }
 
 function SnabbdomRootNode (elm, vnode$, modules) {
@@ -122,45 +122,4 @@ function SnabbdomRootNode (elm, vnode$, modules) {
   vnode$
     // .tap(debug('patch'))
     .reduce(patch, elm)
-  // const Nil = {
-  //   toString () {
-  //     return 'Nil'
-  //   }
-  // }
-  // const Cons = (head, tail) => ({
-  //   head,
-  //   tail,
-  //   toString () {
-  //     return 'cons(' + this.head + ', ' + tail.toString() + ')'
-  //   }
-  // })
-  // function isolateSink ($, scope) {
-  //   return $.map(function mapVnode (vnode) {
-  //     const scopes = vnode.scopes
-  //     const children = vnode.children
-  //     return Object.assign({}, vnode, {
-  //       scopes: scopes ? Cons(scope, scopes) : Cons(scope, Nil),
-  //       children: children ? children.map(mapVnode) : children
-  //     })
-  //   })
-  // }
-  //
-  // function isolateSource ($, scope) {
-  //   return $.filter(({vnode}) => vnode.scopes && vnode.scopes.head === scope)
-  //     .tap(debug('isolateSource' + scope + ':'))
-  //     .map((x) => Object.assign({}, x, {
-  //       vnode: Object.assign({}, x.vnode, {
-  //         scopes: x.vnode.scopes.tail
-  //       })
-  //     }))
-  // }
-
-  // function SnabbdomRootNode () {}
-  //
-  // const snabbdomnode = SnabbdomRootNode(elm, (data, children) => h('div', data, children), function (g, $) {
-  //   g(snabbdomnode((data, children) => h('div', data, children), function (g, $) {
-  //
-  //   }))
-  // })
-  //
 }

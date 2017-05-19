@@ -1,38 +1,42 @@
 const ATree = require('./atree')
-const {combineArray} = require('most')
-const Type = (is, coerce) => ({
-  is,
-  validate (x) { if (!is(x)) throw TypeError(is.toString()) },
-  coerce (x) { return is(x) ? x : (coerce ? coerce.call(this, x) : this.validate(x)) }
-})
-const $Type = (type) => ({
-  is ($) { return $.map(type.is) },
-  validate ($) { return $.tap(type.validate) },
-  coerce ($) { return $.map(type.coerce.bind(type)) }
-})
-const vdomType = Type(
-  x => !!(x && typeof x.sel === 'string'),
-  x => ({sel: 'div', data: {}, text: x + ''})
-)
-const functionType = Type(x => typeof x === 'function')
-const vdom$Type = $Type(vdomType)
-const function$Type = $Type(functionType)
+const m = require('most')
 
-const bark = ATree(
-  ([head, ...tail]) =>
-    vdom$Type.validate(
-      function$Type.validate(head)
-        .ap(combineArray((...vnodes) =>
-          vnodes.map((vnode, i) => Object.assign({}, vnode, {key: i})),
-          tail.map(vdom$Type.coerce)
-        ))
-    )
-)
-module.exports = bark
+const setKey = (vnode, i) => Object.assign({}, vnode, { key: i })
 
-// const {h} = require('snabbdom')
-// const m = require('most')
-// bark(function (push) {
-//   push(m.of((childs) => h('div', childs)))
-//   push(m.of(h('div', 'hi3')))
+const applyChildren = (viewFn$, vdom$s) =>
+  vdom$s.length === 0
+    ? viewFn$.map(vf => vf([]))
+    : viewFn$.ap(m.combineArray((...vdoms) => vdoms.map(setKey), vdom$s))
+
+const vnodeBark = function vnodeBark (viewFn$, pith) {
+  return ATree(vdom$s => {
+    if (vdom$s.length !== 1) throw new TypeError(vnodeBark.toString())
+    return vdom$s[0]
+  })(function (push) {
+    const children$s = []
+    pith(children$s.push.bind(children$s))
+    push(applyChildren(viewFn$, children$s))
+  })
+}
+
+module.exports = vnodeBark
+
+// const div = (sel = '', data = {}) => m.of(children => h('div' + sel, data, children))
+// const h$ = (...args) => m.of(h(...args))
+
+// vnodeBark(div('#root-node'), function (push) {
+//   push(
+//     h$('div', 'hi3'),
+//     vnodeBark(div('.node1'), function (push) {
+//       push(
+//         h$('div', 'hi3'),
+//         vnodeBark(div('.node2'), function (push) {
+//           push(
+//             vnodeBark(div('.node3'), function (push) {
+//             })
+//           )
+//         })
+//       )
+//     })
+//   )
 // }).observe(console.log.bind(console))

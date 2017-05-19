@@ -1,23 +1,27 @@
+const m = require('most')
+const snabbdom = require('snabbdom')
+const {h} = snabbdom
 const vdomBark = require('./vdom-bark')
 
 module.exports = function snabbdomBark (elm, pith) {
   const actionModule = require('../lib/drivers/snabbdom/actionModule')
 
   const vnode$ = vdomBark(
-    addPathRay(
-      addRay(prev => prev || actionModule.action$,
-        mapRays(
-          ([push, path, $]) => [
-            push, '/' + path.join('/'),
-            $.filter(x => x.action.startsWith('/' + path.join('/')))
-          ],
+    m.of(children => h('div#root-node', children)),
+    // addPathRay(
+    //   addRay(prev => prev || actionModule.action$,
+    //     mapRays(
+    //       ([push, path, $]) => [
+    //         push, '/' + path.join('/'),
+    //         $.filter(x => x.action.startsWith('/' + path.join('/')))
+    //       ],
           pith
-        )
-      )
-    )
+    //     )
+    //   )
+    // )
   )
 
-  const patch = require('snabbdom').init([
+  const patch = snabbdom.init([
     ...['class', 'props', 'style']
       .map(name => require('snabbdom/modules/' + name).default),
     actionModule
@@ -28,10 +32,8 @@ module.exports = function snabbdomBark (elm, pith) {
 }
 
 function mapRays (f, pith) {
-  return function (...args) {
-    pith.apply({
-      bark: pith => this.bark(mapRays(f, pith))
-    }, f(args))
+  return function (...rays) {
+    pith(...f(rays))
   }
 }
 function addRay (map, pith, initial = void 0) {

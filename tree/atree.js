@@ -9,13 +9,16 @@ function ATree (id) {
 module.exports = ATree
 
 if (require.main === module) {
-  const samplePith = (stop = false) => function pith (push) {
+  const samplePith = (stop = false) => function pith (push, path) {
+    console.log(path)
     push(1)
-    this.bark(function (push) {
+    this.bark(function (push, path) {
+      console.log(path)
       push('a')
-      this.bark(function (push) {
+      this.bark(function (push, path) {
+        console.log(path)
         push(true)
-        // if (!stop) this.bark(samplePith(true))
+        if (!stop) this.bark(samplePith(true))
         push(false)
       })
       push('b')
@@ -26,12 +29,15 @@ if (require.main === module) {
   var bark = ATree(as => as)
 
   const mapPith = (f, pith) => f(pith)
-
-  const tree = bark(mapPith(function ring (pith) {
-    return function (push, ...rest) {
+  const tree = bark(mapPith(function addPathRay (pith, path = []) {
+    return function (...args) {
+      var i = 0
       pith.apply({
-        bark: pith => this.bark(ring(pith))
-      }, [a => push([a, a]), ...rest])
+        bark: pith => {
+          this.bark(addPathRay(pith, path.concat(i)))
+          i++
+        }
+      }, args.concat([path]))
     }
   }, samplePith()))
 

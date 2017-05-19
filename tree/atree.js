@@ -1,7 +1,7 @@
 function ATree (id) {
   return function bark (pith) {
     const as = []
-    pith(as.push.bind(as), pith => as.push(bark(pith)))
+    pith({put: as.push.bind(as), bark: pith => as.push(bark(pith))})
     return id(as)
   }
 }
@@ -15,17 +15,17 @@ if (require.main === module) {
 }
 
 function Sample (stop = false) {
-  return (push, bark) => {
-    push(1)
-    bark(function (push, bark) {
-      push('a')
-      bark(function (push, bark) {
-        push(true)
+  return ({put, bark}) => {
+    put(1)
+    bark(({put, bark}) => {
+      put('a')
+      bark(({put, bark}) => {
+        put(true)
         if (!stop) bark(Sample(true))
-        push(false)
+        put(false)
       })
-      push('b')
+      put('b')
     })
-    push(2)
+    put(2)
   }
 }

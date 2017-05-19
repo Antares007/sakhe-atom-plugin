@@ -1,7 +1,7 @@
 function ATree (id) {
   return function bark (pith) {
     const as = []
-    pith.call({ bark: pith => { as.push(bark(pith)) } }, as.push.bind(as))
+    pith(as.push.bind(as), pith => as.push(bark(pith)))
     return id(as)
   }
 }
@@ -9,16 +9,13 @@ function ATree (id) {
 module.exports = ATree
 
 if (require.main === module) {
-  const samplePith = (stop = false) => function pith (push, path) {
-    console.log(path)
+  const samplePith = (stop = false) => function pith (push, bark) {
     push(1)
-    this.bark(function (push, path) {
-      console.log(path)
+    bark(function (push, bark) {
       push('a')
-      this.bark(function (push, path) {
-        console.log(path)
+      bark(function (push, bark) {
         push(true)
-        if (!stop) this.bark(samplePith(true))
+        if (!stop) bark(samplePith(true))
         push(false)
       })
       push('b')
@@ -27,19 +24,7 @@ if (require.main === module) {
   }
 
   var bark = ATree(as => as)
-
-  const mapPith = (f, pith) => f(pith)
-  const tree = bark(mapPith(function addPathRay (pith, path = []) {
-    return function (...args) {
-      var i = 0
-      pith.apply({
-        bark: pith => {
-          this.bark(addPathRay(pith, path.concat(i)))
-          i++
-        }
-      }, args.concat([path]))
-    }
-  }, samplePith()))
+  const tree = bark(samplePith())
 
   console.log(JSON.stringify(tree))
 }

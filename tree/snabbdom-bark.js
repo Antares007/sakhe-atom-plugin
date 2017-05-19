@@ -25,12 +25,6 @@ module.exports = function snabbdomBark (elm, pith) {
     .reduce(patch, elm)
 }
 
-function mapRays (f, pith) {
-  return function (...rays) {
-    pith(...f(rays))
-  }
-}
-
 function addRay (ray, pith) {
   return function (push, bark, ...rays) {
     pith(

@@ -9,22 +9,23 @@ function ATree (id) {
 module.exports = ATree
 
 if (require.main === module) {
-  const samplePith = (stop = false) => function pith (push, bark) {
+  var bark = ATree(as => as)
+  const tree = bark(Sample())
+  console.log(JSON.stringify(tree))
+}
+
+function Sample (stop = false) {
+  return (push, bark) => {
     push(1)
     bark(function (push, bark) {
       push('a')
       bark(function (push, bark) {
         push(true)
-        if (!stop) bark(samplePith(true))
+        if (!stop) bark(Sample(true))
         push(false)
       })
       push('b')
     })
     push(2)
   }
-
-  var bark = ATree(as => as)
-  const tree = bark(samplePith())
-
-  console.log(JSON.stringify(tree))
 }

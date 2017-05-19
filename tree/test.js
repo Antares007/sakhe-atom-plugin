@@ -9,9 +9,15 @@ function Me (d = 0) {
     path = '/' + path.join('/')
     $.filter(x => x.action.startsWith(path))
      .observe(debug(path))
-    push(h$('button', { on: { click: path } }, path))
+
+    push(h$('button', {
+      on: { click: path }
+    }, path))
+
     for (let i = 0; i < 2; i++) {
-      if (d < 5) bark(div('.d' + d), Me(d + 1))
+      if (d < 5) {
+        bark(div('.d' + d, { style: { paddingLeft: '10px' } }), Me(d + 1))
+      }
     }
   }
 }

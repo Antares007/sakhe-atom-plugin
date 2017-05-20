@@ -66,7 +66,7 @@ function addActionSource ($, pith) {
     $: $.filter(x => x.vnode.path.startsWith(rays.path))
   }))
 }
-function addPathRay (pith, path = ['']) {
+function addPathRay (pith, path = ['pith']) {
   return function (rays) {
     var i = 0
     pith(Object.assign({}, rays, {

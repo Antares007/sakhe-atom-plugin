@@ -25,28 +25,37 @@ module.exports = function snabbdomBark (elm, pith) {
 }
 
 function addActionSource ($, pith) {
-  return rays => pith(Object.assign({}, rays, {
-    put: vdom$ => rays.put(vdom$.map(function mapVnode (n) {
-      return n && n.sel
-      ? Object.assign({}, n, {
-        path: rays.path,
-        children: n.children ? n.children.map(mapVnode) : n.children
-      })
-      : n
-    })),
-    bark: (viewFn$, pith) => rays.bark(
-      viewFn$.map(vf => chlds => Object.assign({}, vf(chlds), {path: rays.path})),
-      addActionSource($, pith)
-    ),
-    $: $.filter(x => x.vnode.path.startsWith(rays.path))
-  }))
+  return function (rays, ...rest) {
+    pith.apply(Object.assign({}, this, {
+      put: vdom$ => this.put(vdom$.map(function mapVnode (n) {
+        return n && n.sel
+        ? Object.assign({}, n, {
+          path: rays.path,
+          children: n.children ? n.children.map(mapVnode) : n.children
+        })
+        : n
+      })),
+      bark: (viewFn$, pith) => this.bark(
+        viewFn$.map(vf => chlds => Object.assign({}, vf(chlds), {path: rays.path})),
+        addActionSource($, pith)
+      )
+    }), [
+      Object.assign({}, rays, {
+        $: $.filter(x => x.vnode.path.startsWith(rays.path))
+      }),
+      ...rest
+    ])
+  }
 }
+
 function addPathRay (pith, path = ['pith']) {
-  return function (rays) {
+  return function (rays, ...rest) {
     var i = 0
-    pith(Object.assign({}, rays, {
-      bark: (viewFn$, pith) => rays.bark(viewFn$, addPathRay(pith, path.concat(i++))),
-      path: path.join('/')
-    }))
+    pith.apply(Object.assign({}, this, {
+      bark: (viewFn$, pith) => this.bark(viewFn$, addPathRay(pith, path.concat(i++)))
+    }), [
+      Object.assign({}, rays, { path: path.join('/') }),
+      ...rest
+    ])
   }
 }

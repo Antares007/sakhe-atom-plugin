@@ -7,6 +7,7 @@ const setIndex = vdom$s => vdom$s.map(
     : {sel: 'div', key: i, data: {}, text: x + ''}
   )
 )
+
 const vnodeBark = function vnodeBark (viewFn$, pith) {
   const bark = ATree(
     vdom$s => viewFn$.ap(m.combineArray(
@@ -14,10 +15,11 @@ const vnodeBark = function vnodeBark (viewFn$, pith) {
       setIndex(vdom$s)
     ))
   )
-  return bark(({put, bark}) => pith({
-    put,
-    bark: (viewFn$, pith) => put(vnodeBark(viewFn$, pith))
-  }))
+  return bark(function (...args) {
+    pith.apply(Object.assign({}, this, {
+      bark: (viewFn$, pith) => this.put(vnodeBark(viewFn$, pith))
+    }), args)
+  })
 }
 
 module.exports = vnodeBark

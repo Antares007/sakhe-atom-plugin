@@ -17,7 +17,7 @@ const vnodeBark = function vnodeBark (viewFn$, pith) {
   )
   return bark(function (...args) {
     pith.apply(Object.assign({}, this, {
-      bark: (viewFn$, pith) => this.put(vnodeBark(viewFn$, pith))
+      node: (viewFn$, pith) => this.put(vnodeBark(viewFn$, pith))
     }), args)
   })
 }

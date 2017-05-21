@@ -35,7 +35,7 @@ function addActionSource ($, pith) {
         })
         : n
       })),
-      bark: (viewFn$, pith) => this.bark(
+      node: (viewFn$, pith) => this.node(
         viewFn$.map(vf => chlds => Object.assign({}, vf(chlds), {path: rays.path})),
         addActionSource($, pith)
       )
@@ -52,7 +52,7 @@ function addPathRay (pith, path = ['pith']) {
   return function (rays, ...rest) {
     var i = 0
     pith.apply(Object.assign({}, this, {
-      bark: (viewFn$, pith) => this.bark(viewFn$, addPathRay(pith, path.concat(i++)))
+      node: (viewFn$, pith) => this.node(viewFn$, addPathRay(pith, path.concat(i++)))
     }), [
       Object.assign({}, rays, { path: path.join('/') }),
       ...rest

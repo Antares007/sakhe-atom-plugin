@@ -10,11 +10,7 @@ module.exports = function snabbdomBark (elm, pith) {
     vdomBark(m.of(children => h('div#root-node', children)),
       addPathRay(
         addActionSource(actionModule.action$,
-          coercePutRay(
-            coerceBarkRay(
-              pith
-            )
-          )
+          pith
         )
       )
     )
@@ -28,27 +24,6 @@ module.exports = function snabbdomBark (elm, pith) {
     .reduce(patch, elm)
 }
 
-function coercePutRay (pith) {
-  return rays => pith(Object.assign({}, rays, {
-    put: (...args) => {
-      for (var i = 0; i < args.length; i++) {
-        var a = args[i]
-        rays.put(a.sel || typeof a === 'string' ? m.of(a) : a)
-      }
-    },
-    bark: (vf$, pith) => rays.bark(vf$, coercePutRay(pith))
-  }))
-}
-function coerceBarkRay (pith) {
-  return rays => pith(Object.assign({}, rays, {
-    bark: (x, pith) => rays.bark(
-      x.sel
-      ? m.of(children => Object.assign({}, x, {children}))
-      : x,
-      coerceBarkRay(pith)
-    )
-  }))
-}
 function addActionSource ($, pith) {
   return rays => pith(Object.assign({}, rays, {
     put: vdom$ => rays.put(vdom$.map(function mapVnode (n) {

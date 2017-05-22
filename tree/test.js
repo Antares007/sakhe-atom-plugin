@@ -1,7 +1,8 @@
 const debug = require('debug')
 const m = require('most')
-const h = require('snabbdom/h').default
-const vdomBark = require('./vdom-bark')
+const {h} = require('snabbdom')
+const hf$Bark = require('./vdom-bark')
+
 
 function Form () {
   return function ({action$}) {
@@ -32,98 +33,60 @@ function Me () {
   return function ({action$}) {
     const [add$] = this.node(h('div'), Form())
     add$.observe(debug('add$'))
-    this.put(
-      vdomBark(m.of(children => h('div', children)), function () {
-        this.put(m.of('hello'))
-      })
-    )
+    // this.put(
+    //   vdomBark(m.of(children => h('div', children)), function () {
+    //     this.put(m.of('hello'))
+    //   })
+    // )
   }
 }
+
 function Counter (d = 0) { //eslint-disable-line
   return function pith ({path, action$}) {
-    this.node(h('div', {style: {textAlign: 'center'}}), function () {
+    this.node(m.of(h => h('div', {style: {textAlign: 'center'}})), function () {
       const sum$ = action$(+1).merge(action$(-1))
         .scan((sum, x) => sum + x.action, 0)
-      this.put(path, sum$)
-      this.node(h('button', {on: {click: +1}}), function () {
-        this.put('+')
-        if (d < 3) this.node(h('div'), Counter(d + 1))
+      this.put(sum$.map(sum => h => h('div', {}, [sum])))
+      this.node(m.of(h => h('button', {on: {click: +1}})), function () {
+        this.put(m.of(h => '+'))
+        if (d < 3) this.node(m.of(h => h('div', {})), Counter(d + 1))
       })
-      this.node(h('button', {on: {click: -1}}), function () {
-        this.put('-')
-        if (d < 3) this.node(h('div'), Counter(d + 1))
+      this.node(m.of(h => h('button', {on: {click: -1}})), function () {
+        this.put(m.of(h => '-'))
+        if (d < 3) this.node(m.of(h => h('div', {})), Counter(d + 1))
       })
     })
   }
 }
 
-const elm = document.getElementById('root-node')
-const bark = require('./snabbdom-bark')
-
-const addReturn = mapPith((pith) => function (...args) {
-  pith.apply(Object.assign({}, this, {
-    node: (vf$, pith) => {
-      const rs = []
-      this.node(vf$, function (...args) {
-        pith.apply(Object.assign({}, this, {
-          return: rs.push.bind(rs)
-        }), args)
-      })
-      return rs
-    }
-  }), args)
-})
-const coerceBarkRay = mapPith(function (pith) {
-  return function (...args) {
-    pith.apply(Object.assign({}, this, {
-      node: (x, pith) => this.node(
-        x.sel
-        ? m.of(children => Object.assign({}, x, {children}))
-        : x,
-        pith
-      )
-    }), args)
-  }
-})
-const coercePutRay = mapPith(function (pith) {
-  return function (...args) {
-    pith.apply(Object.assign({}, this, {
-      put: (...args) => {
-        for (var i = 0; i < args.length; i++) {
-          var a = args[i]
-          this.put(a.sel || typeof a === 'string' ? m.of(a) : a)
-        }
-      }
-    }), args)
-  }
-})
-
-bark(elm,
-  coerceBarkRay(
-    coercePutRay(
-      mapRays(rays => ({ action$: a => rays.$.filter(x => x.action === a) }),
-        addReturn(
-          Counter()
-        )
-      )
+function Tree (d = 4, w = 2) {
+  return function ({path, action$}) {
+    this.put(m.of(h =>
+      h('button', {on: {click: path}}, path)
+    ))
+    this.put(
+      action$(() => true).map(x => x.action).startWith('A')
+        .map(x => h => h('span', {}, x))
     )
+    for (var i = 0; i < w; i++) {
+      if (d > 0) {
+        this.node(
+          m.of(h => h('div', {style: {paddingLeft: '10px'}})),
+          Tree(d - 1, w)
+        )
+      }
+    }
+  }
+}
+
+require('./snabbdom-bark')(
+  document.getElementById('root-node'),
+  hf$Bark.assignRays(rays => ({
+    action$: a => rays.$.filter(x => {
+      if (typeof a === 'function') return a(x)
+      return x.action === a
+    })
+  }))(
+    Counter()
   )
 )
-
-function mapRays (f, pith) {
-  return mapPith(function (pith) {
-    return function (rays) {
-      pith.call(this, Object.assign({}, rays, f(rays)))
-    }
-  })(pith)
-}
-
-function mapPith (f) {
-  return function rec (pith) {
-    return f(function (...args) {
-      pith.apply(Object.assign({}, this, {
-        node: (vf$, pith) => this.node(vf$, rec(pith))
-      }), args)
-    })
-  }
-}

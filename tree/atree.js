@@ -17,7 +17,7 @@ if (require.main === module) {
 function Sample (stop = false) {
   return function () {
     this.put(1)
-    var [ret] = this.node(function () {
+    this.node(function () {
       this.put('a')
       this.node(function () {
         this.put(true)
@@ -25,9 +25,8 @@ function Sample (stop = false) {
         this.put(false)
       })
       this.put('b')
-      this.return(2)
     })
-    this.put(ret)
+    this.put(2)
   }
 }
 

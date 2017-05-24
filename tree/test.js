@@ -1,47 +1,39 @@
-const debug = require('debug')
+const debug = require('debug') //eslint-disable-line
 const m = require('most')
-const {h} = require('snabbdom')
-const hf$Bark = require('./vdom-bark')
+// const {h} = require('snabbdom')
+// const hf$Bark = require('./vdom-bark')
+// const ring = require('./ring')
 
-
-function Form () {
+function Form () { //eslint-disable-line
   return function ({action$}) {
-    var state
+    // var state
     const state$ = action$('input').map(x => x.event.target.value)
-        .scan((s, v) => v, 'A')
-        .tap(s => { state = s })
+        .scan((s, v) => v, '')
+        // .tap(s => { state = s })
         .multicast()
-    this.put(
-      state$.map(value =>
+    this.put(state$.map(value => h =>
+      h('div', {}, [
         h('input', {
           on: {input: 'input'},
           props: {type: 'text', value}
-        })
-      ),
-      state$.map(value =>
+        }),
         h('button', {
           on: {click: 'add'},
           props: {disabled: value.length === 0}
         }, 'add')
-      )
-    )
-    this.return(action$('add').map(() => state))
+      ])
+    ))
+    // this.return(action$('add').map(() => state))
   }
 }
 
-function Me () {
-  return function ({action$}) {
-    const [add$] = this.node(h('div'), Form())
-    add$.observe(debug('add$'))
-    // this.put(
-    //   vdomBark(m.of(children => h('div', children)), function () {
-    //     this.put(m.of('hello'))
-    //   })
-    // )
+const run = function Folder () {
+  return function ({action$, path, $}) {
+    this.put(m.of(h => h('h1', {}, path)))
   }
 }
 
-function Counter (d = 0) { //eslint-disable-line
+function Counter (d = 2) { //eslint-disable-line
   return function pith ({path, action$}) {
     this.node(m.of(h => h('div', {style: {textAlign: 'center'}})), function () {
       const sum$ = action$(+1).merge(action$(-1))
@@ -49,17 +41,17 @@ function Counter (d = 0) { //eslint-disable-line
       this.put(sum$.map(sum => h => h('div', {}, [sum])))
       this.node(m.of(h => h('button', {on: {click: +1}})), function () {
         this.put(m.of(h => '+'))
-        if (d < 3) this.node(m.of(h => h('div', {})), Counter(d + 1))
+        if (d > 0) this.node(m.of(h => h('div', {})), Counter(d - 1))
       })
       this.node(m.of(h => h('button', {on: {click: -1}})), function () {
         this.put(m.of(h => '-'))
-        if (d < 3) this.node(m.of(h => h('div', {})), Counter(d + 1))
+        if (d > 0) this.node(m.of(h => h('div', {})), Counter(d - 1))
       })
     })
   }
 }
 
-function Tree (d = 4, w = 2) {
+function Tree (d = 4, w = 2) { //eslint-disable-line
   return function ({path, action$}) {
     this.put(m.of(h =>
       h('button', {on: {click: path}}, path)
@@ -79,14 +71,4 @@ function Tree (d = 4, w = 2) {
   }
 }
 
-require('./snabbdom-bark')(
-  document.getElementById('root-node'),
-  hf$Bark.assignRays(rays => ({
-    action$: a => rays.$.filter(x => {
-      if (typeof a === 'function') return a(x)
-      return x.action === a
-    })
-  }))(
-    Counter()
-  )
-)
+require('./snabbdom-bark')(document.getElementById('root-node'), run())

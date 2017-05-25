@@ -1,12 +1,13 @@
 const ATree = require('./atree')
 const m = require('most')
+const {h} = require('snabbdom')
 
 const hf$Bark = function hf$Bark (hf$, pith) {
   const bark = ATree(
     hf$s => hf$
-      .map(hf => hfs => h =>
-        hf((sel, data = {}) => h(sel, data, hfs.map(hf => hf(h))))
-      ).ap(m.combineArray(
+      .map(hf => hfs => h => {
+        return hf((sel, data = {}) => h(sel, data, hfs.map(hf => hf(h))))
+      }).ap(m.combineArray(
         (...hfs) => hfs,
         hf$s.map((hf$, key) => hf$.map(fh => h =>
           fh((s, d, c) => h(s, Object.assign({}, {key}, d), c))

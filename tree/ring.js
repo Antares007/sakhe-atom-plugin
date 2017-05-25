@@ -36,10 +36,7 @@ module.exports = function ring (path, $, pith) {
       pathTagVnodes(
         add$Ray(
           addAction$Ray(
-            addNode$(
-              cring(
-                pith
-              )
+            addNode$(cring(pith)
             )
           )
         )

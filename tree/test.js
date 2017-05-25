@@ -27,29 +27,32 @@ function Form () { //eslint-disable-line
   }
 }
 
-const run = function Folder () {
+function Folder () { //eslint-disable-line
   return function ({action$, path, $}) {
     this.put(m.of(h => h('h1', {}, path)))
+    // this.snode()
   }
 }
 
-function Counter (d = 2) { //eslint-disable-line
+const run = function Counter (d = 4) { //eslint-disable-line
   return function pith ({path, action$}) {
     this.node(m.of(h => h('div', {style: {textAlign: 'center'}})), function () {
       const sum$ = action$(+1).merge(action$(-1))
         .scan((sum, x) => sum + x.action, 0)
-      this.put(sum$.map(sum => h => h('div', {}, [sum])))
-      this.node(m.of(h => h('button', {on: {click: +1}})), function () {
+      this.put(sum$.map(sum => h => h('div', {}, [sum, h('p', {}, path)])))
+      this.node(m.of(h => h('button', {on: {click: +1}})), function ({path}) {
         this.put(m.of(h => '+'))
         if (d > 0) this.node(m.of(h => h('div', {})), Counter(d - 1))
       })
-      this.node(m.of(h => h('button', {on: {click: -1}})), function () {
+      this.node(m.of(h => h('button', {on: {click: -1}})), function ({path}) {
         this.put(m.of(h => '-'))
         if (d > 0) this.node(m.of(h => h('div', {})), Counter(d - 1))
       })
     })
   }
 }
+
+
 
 function Tree (d = 4, w = 2) { //eslint-disable-line
   return function ({path, action$}) {

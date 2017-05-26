@@ -34,7 +34,7 @@ function Folder () { //eslint-disable-line
   }
 }
 
-const run = function Counter (d = 4) { //eslint-disable-line
+const run = function Counter (d = 2) { //eslint-disable-line
   return function pith ({path, action$}) {
     this.node(m.of(h => h('div', {style: {textAlign: 'center'}})), function () {
       const sum$ = action$(+1).merge(action$(-1))

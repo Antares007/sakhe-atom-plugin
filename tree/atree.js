@@ -1,9 +1,9 @@
 function ATree (id) {
-  return Object.assign(function bark (pith) {
+  return function bark (pith) {
     const as = []
     pith.call({ put: as.push.bind(as), node: pith => { as.push(bark(pith)) } })
     return id(as)
-  }, { map (f) { return pith => this(f(pith)) } })
+  }
 }
 
 module.exports = ATree

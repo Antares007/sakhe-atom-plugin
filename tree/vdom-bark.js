@@ -2,24 +2,27 @@ const ATree = require('./atree')
 const m = require('most')
 const {h} = require('snabbdom')
 
-const hf$Bark = function hf$Bark (hf$, pith) {
-  const bark = ATree(
-    hf$s => hf$
-      .map(hf => hfs => h => {
-        return hf((sel, data = {}) => h(sel, data, hfs.map(hf => hf(h))))
-      }).ap(m.combineArray(
-        (...hfs) => hfs,
-        hf$s.map((hf$, key) => hf$.map(fh => h =>
-          fh((s, d, c) => h(s, Object.assign({}, {key}, d), c))
+const hf$Bark = (function Hf$Bark () {
+  return function hf$Bark (hf$, pith) {
+    const bark = ATree(
+      hf$s => hf$
+        .map(hf => hfs => h => {
+          return hf((sel, data = {}) => h(sel, data, hfs.map(hf => hf(h))))
+        }).ap(m.combineArray(
+          (...hfs) => hfs,
+          hf$s.map((hf$, key) => hf$.map(fh => h =>
+            fh((s, d, c) => h(s, Object.assign({}, {key}, d), c))
+          ))
         ))
-      ))
-  )
-  return bark(function () {
-    pith.call(Object.assign({}, this, {
-      node: (hf$, pith) => this.put(hf$Bark(hf$, pith))
-    }))
-  })
-}
+    )
+    return bark(function () {
+      pith.call(Object.assign({}, this, {
+        node: (hf$, pith) => this.put(hf$Bark(hf$, pith))
+      }))
+    })
+  }
+})()
+
 module.exports = Object.assign(hf$Bark, {
   assignThis: f => mapPith(pith => function (rays) {
     pith.call(Object.assign({}, this, f(this)), rays)

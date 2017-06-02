@@ -4,7 +4,7 @@ const patch = require('snabbdom').init([
   actionModule
 ])
 const toVnode = require('snabbdom/tovnode').default
-// const m = require('most')
+const m = require('most')
 const {h} = require('snabbdom')
 const promiseBark = require('./atree')(ps => Promise.all(ps))
 var rootId = 0
@@ -12,23 +12,34 @@ var rootId = 0
 module.exports = snabbdomBark
 
 function snabbdomBark (rootNode, pith) {
+  const vnode$ = hf$Bark(m.of(h => h('div', {}, pith)))
+  return vnode$
+    .reduce(patch, toVnode(rootNode))
+}
+
+function snabbdomBark (rootNode, pith) {
   return snabbdomInnerBark(rootNode,
     addPathRay([rootId++],
-      assignPith((ths, rays) => {
-        const path = rays.path
-        return [{
-          put: hf$ => ths.put(hf$.map(hf => {
+      assignPith((ths, rays) => [{
+        put: hf$ => ths.put(
+          hf$.flatMap(hf => {
+            const piths = []
             const vnode = hf((s, d, c) => {
+              if (typeof c === 'function') {
+                c = [c]
+                piths.push(c)
+              }
               const vnode = h(s, d, c)
-              vnode.path = path
+              vnode.path = rays.path
               return vnode
             })
+            if (piths.length === 0) return m.of(vnode)
             return vnode
-          }))
-        }, {
-          $: actionModule.action$.filter(x => x.vnode.path.startsWith(path))
-        }]
-      })(
+          })
+        )
+      }, {
+        $: actionModule.action$.filter(x => x.vnode.path.startsWith(rays.path))
+      }])(
         pith
       )
     )
@@ -49,7 +60,7 @@ function snabbdomInnerBark (rootNode, pith) {
       },
       node: (elm, pith) => {
         const parentElement = elm.parentElement
-        this.node(function addArgPith (...args) {
+        this.node(function nodePith (...args) {
           if (!parentElement) { rootNode.appendChild(elm) }
           this.put(
             snabbdomInnerBark(elm, pith).then((rez) => {

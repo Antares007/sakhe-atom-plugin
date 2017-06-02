@@ -1,9 +1,9 @@
 const ATree = require('./atree')
 const m = require('most')
 
-module.exports = hf$Bark
+module.exports = vnode$Bark
 
-function hf$Bark (path, $, hf$, pith) {
+function vnode$Bark (path, $, vnode$, pith) {
   const tag = path => hf => h => {
     const vnode = hf((s, d, c) => {
       const vnode = h(s, d, c)
@@ -12,11 +12,11 @@ function hf$Bark (path, $, hf$, pith) {
     })
     return vnode
   }
-  return hf$InnerBark(hf$,
+  return vnode$InnerBark(vnode$,
     addPathRay(path,
       assignPith((ths, rays) => [{
-        put: hf$ => ths.put(hf$.map(tag(rays.path))),
-        node: (hf$, pith) => ths.node(hf$.map(tag(rays.path)), pith)
+        put: vnode$ => ths.put(vnode$.map(tag(rays.path))),
+        node: (vnode$, pith) => ths.node(vnode$.map(tag(rays.path)), pith)
       }, {
         $: $.filter(x => x.vnode.path.startsWith(rays.path)),
         action$: a => $.filter(x => x.vnode.path.startsWith(rays.path)).filter(x => {
@@ -30,14 +30,14 @@ function hf$Bark (path, $, hf$, pith) {
   )
 }
 
-function hf$InnerBark (hf$, pith) {
+function vnode$InnerBark (vnode$, pith) {
   const bark = ATree(
-    hf$s => hf$
+    vnode$s => vnode$
       .map(hf => hfs => h => {
         return hf((sel, data = {}) => h(sel, data, hfs.map(hf => hf(h))))
       }).ap(m.combineArray(
         (...hfs) => hfs,
-        hf$s.map((hf$, key) => hf$.map(hf => h => {
+        vnode$s.map((vnode$, key) => vnode$.map(hf => h => {
           const vnode = hf.vnode = hf(h)
           vnode.key = key
           return vnode
@@ -46,7 +46,7 @@ function hf$InnerBark (hf$, pith) {
   )
   return bark(function () {
     pith.call(Object.assign({}, this, {
-      node: (hf$, pith) => this.put(hf$InnerBark(hf$, pith))
+      node: (vnode$, pith) => this.put(vnode$InnerBark(vnode$, pith))
     }))
   })
 }
@@ -74,7 +74,7 @@ function mapPith (f) {
   return function rec (pith) {
     return f(function (...args) {
       pith.apply(Object.assign({}, this, {
-        node: (hf$, pith) => this.node(hf$, rec(pith))
+        node: (vnode$, pith) => this.node(vnode$, rec(pith))
       }), args)
     })
   }

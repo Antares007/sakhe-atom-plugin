@@ -1,35 +1,60 @@
 // const debug = require('debug')
 const snabbdomBark = require('./snabbdom-bark')
+const {h} = require('snabbdom')
 const m = require('most')
-const hf$Bark = require('./hf$-bark')
 
-snabbdomBark(
-  document.getElementById('root-node'),
-  function ({path, $}) {
-    var i = 0
+function T (stop = false) {
+  return function ({path, $}) {
+    this.put('h1', {}, 'hello')
+
+    this.node(function () {
+      this.put(
+        m.of(h => h('h1', 'hello2'))
+         .merge(m.empty().delay(1000))
+      )
+    })
+    if (stop) return
     this.put(
-      hf$Bark(path.split('/'), $, m.of(h => h('div.n', {style: {paddingLeft: i++ + 'px'}})), function ({path, $, action$}) {
-        this.put(
-          action$('a')
-            .scan(c => c + 1, 0)
-            .map(i => h => h('div.c', {}, [
-              h('button', {on: {click: 'a'}}, 'click' + i)
-            ]))
-        )
-        this.put(
-          m.of(h => h('h1', 'hi' + i++))
-        )
-        this.put(
-          hf$Bark(path.split('/'), $, m.of(h => h('div.nested', {})), Tree())
-        )
-        this.put(
-          hf$Bark(path.split('/'), $, m.of(h => h('div.nested', {})), Form())
-        )
-        // this.node(m.of(h => h('div', {})), Tree(1, 4))
-      })
+      m.of(h =>
+        h('ul', {}, [
+          h('li', {}, T(true)),
+          h('li', {}, [
+            h('ul', {}, [
+              h('li', {}, T(true))
+            ])
+          ])
+        ])
+      ).merge(m.empty().delay(100000))
     )
   }
-).then((x) => console.log(x))
+}
+
+snabbdomBark(document.getElementById('root-node'), T())
+  .then((x) => console.log(x))
+
+function CounterN (d = 3) { //eslint-disable-line
+  return function ({path, action$}) {
+    const sum$ = m.merge(action$(-1), action$(+1))
+                  .scan((sum, x) => sum + x.action, 0)
+    this.put(
+      sum$.map(sum => h('div', sum))
+    ).node(
+      h('button', {on: {click: +1}}), ({n, l}) => {
+        this.put('+')
+        if (d > 0) this.put(CounterN(d - 1))
+      }
+    ).node(
+      children => h('div', [
+        h('button', {on: {click: -1}}),
+        ...children
+      ]),
+      ({n, l}) => {
+        this.put('-')
+        if (d > 0) this.put(m.of(CounterN(d - 1)))
+      }
+    )
+  }
+}
 
 function Me (d = 2, w = 2) { //eslint-disable-line
   return function mePith ({path, rootNode, $}) {
@@ -54,7 +79,7 @@ function Me (d = 2, w = 2) { //eslint-disable-line
   }
 }
 
-function Counter (d = 2) { //eslint-disable-line
+function Counter (d = 3) { //eslint-disable-line
   return function pith ({path, action$}) {
     this.node(m.of(h => h('div', {style: {textAlign: 'center'}})), function () {
       const sum$ = action$(+1)
@@ -65,6 +90,7 @@ function Counter (d = 2) { //eslint-disable-line
         this.put(m.of(h => '+'))
         if (d > 0) this.node(m.of(h => h('div', {})), Counter(d - 1))
       })
+
       this.node(m.of(h => h('button', {on: {click: -1}})), function ({path}) {
         this.put(m.of(h => '-'))
         if (d > 0) this.node(m.of(h => h('div', {})), Counter(d - 1))

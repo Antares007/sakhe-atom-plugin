@@ -1,121 +1,103 @@
-// const debug = require('debug')
-const snabbdomBark = require('./snabbdom-bark')
-const {h} = require('snabbdom')
-const m = require('most')
+const H = require('./h')
+const m = require('most') //eslint-disable-line
 
-function T (stop = false) {
-  return function ({path, $}) {
-    this.put('h1', {}, 'hello')
+H('div#root-node.a', Animation(0))
 
-    this.node(function () {
-      this.put(
-        m.of(h => h('h1', 'hello2'))
-         .merge(m.empty().delay(1000))
-      )
+function camelCase (str) {
+  const [first, ...last] = str.split('-')
+  return first + last.reduce((s, a) => s + a[0].toUpperCase() + a.slice(1), '')
+}
+
+function css (str) {
+  return str.split(/;|\n/).reduce((s, kvStr) => {
+    const [keyStr, valueStr] = kvStr.split(':')
+    const key = camelCase(keyStr.trim())
+    if (key === '') return s
+    s[key] = valueStr.trim()
+    return s
+  }, {})
+}
+
+function Animation (d = 4, w = 2) { //eslint-disable-line
+  return ({h, path, $}) => {
+    h('div.contentContainer', {
+      style: css(`
+        width: 100%;
+        height: 100%;
+        border: 5px black solid;
+        overflow: hidden;
+        background-color: #FFFF00;
+        `),
+      props: {
+        width: '300px'
+      }
+    }, ({h}) => {
+      const a$ = require('./animation-frame')
+      const xy$ = a$.scan(incrementer => incrementer >= Math.PI * 2 ? 0 : incrementer + 0.01, 0)
+        .map(i => [125 + 100 * Math.cos(i), 5 + 100 * Math.sin(i)])
+      h('img', xy$.map(([x, y]) => ({
+        style: css(`
+          position: relative;
+          left: ${x}px;
+          top: ${y}px;
+        `),
+        attrs: css(`
+          src: ../tree/donut.png
+          width: 300px
+          height: 300px
+        `)
+      })), '')
     })
-    if (stop) return
-    this.put(
-      m.of(h =>
-        h('ul', {}, [
-          h('li', {}, T(true)),
-          h('li', {}, [
-            h('ul', {}, [
-              h('li', {}, T(true))
-            ])
-          ])
-        ])
-      ).merge(m.empty().delay(100000))
-    )
   }
 }
-
-snabbdomBark(document.getElementById('root-node'), T())
-  .then((x) => console.log(x))
-
-function CounterN (d = 3) { //eslint-disable-line
-  return function ({path, action$}) {
-    const sum$ = m.merge(action$(-1), action$(+1))
-                  .scan((sum, x) => sum + x.action, 0)
-    this.put(
-      sum$.map(sum => h('div', sum))
-    ).node(
-      h('button', {on: {click: +1}}), ({n, l}) => {
-        this.put('+')
-        if (d > 0) this.put(CounterN(d - 1))
-      }
-    ).node(
-      children => h('div', [
-        h('button', {on: {click: -1}}),
-        ...children
-      ]),
-      ({n, l}) => {
-        this.put('-')
-        if (d > 0) this.put(m.of(CounterN(d - 1)))
-      }
-    )
-  }
-}
-
-function Me (d = 2, w = 2) { //eslint-disable-line
-  return function mePith ({path, rootNode, $}) {
-    this.put(
-      $.startWith('').map(x => h =>
-        h('div', {}, [
-          h('button', {on: {click: path}}, path),
-          h('code', {}, x.action)
-        ])
-      ).until(
-        $.filter(x => x.vnode.path === path)
-      )
-    )
+function Tree (d = 4, w = 2) { //eslint-disable-line
+  return ({h, path, $}) => {
+    h('button', { on: {click: 'from:' + path} }, path)
+    h('span', $.map(x => x.action).startWith(''))
     for (var i = 0; i < w; i++) {
-      if (d > 0) {
-        const elm = document.createElement('div')
-        elm.setAttribute('id', 'node-' + path)
-        elm.style.paddingLeft = '20px'
-        this.node(elm, Me(d - 1, w))
-      }
+      if (d > 0) h('div', {style: {paddingLeft: '20px'}}, Tree(d - 1, w))
     }
   }
 }
 
 function Counter (d = 3) { //eslint-disable-line
-  return function pith ({path, action$}) {
-    this.node(m.of(h => h('div', {style: {textAlign: 'center'}})), function () {
-      const sum$ = action$(+1)
-        .merge(action$(-1))
-        .scan((sum, x) => sum + x.action, 0)
-      this.put(sum$.map(sum => h => h('div', {}, [sum, h('p', {}, path)])))
-      this.node(m.of(h => h('button', {on: {click: +1}})), function ({path}) {
-        this.put(m.of(h => '+'))
-        if (d > 0) this.node(m.of(h => h('div', {})), Counter(d - 1))
+  const color = 100 + d * 30
+  return ({h, action$}) => {
+    const sum$ = action$(-1).merge(action$(+1))
+      .scan((sum, x) => sum + x.action, 0)
+    h('div', {style: {padding: '5px 10px', textAlign: 'center'}}, ({h}) => {
+      h('h2', {}, sum$)
+      h('button', {
+        on: {click: +1},
+        style: { backgroundColor: `rgb(255, ${color}, ${color})` }
+      }, ({h}) => {
+        h('span', {}, '+')
+        if (d > 0) h('div', {}, Counter(d - 1))
       })
-
-      this.node(m.of(h => h('button', {on: {click: -1}})), function ({path}) {
-        this.put(m.of(h => '-'))
-        if (d > 0) this.node(m.of(h => h('div', {})), Counter(d - 1))
+      h('button', {
+        on: {click: -1},
+        style: { backgroundColor: `rgb(${color}, ${color}, 255)` }
+      }, ({h}) => {
+        h('span', {}, '-')
+        if (d > 0) h('div', {}, Counter(d - 1))
       })
     })
   }
 }
 
-function Tree (d = 4, w = 2) { //eslint-disable-line
-  return function ({path, action$}) {
-    this.put(m.of(h =>
-      h('button', {on: {click: path}}, path)
-    ))
-    this.put(
-      action$(() => true).map(x => x.action).startWith('A')
-        .map(x => h => h('span', {}, x))
-    )
-    for (var i = 0; i < w; i++) {
-      if (d > 0) {
-        this.node(
-          m.of(h => h('div', {style: {paddingLeft: '10px'}})),
-          Tree(d - 1, w)
-        )
-      }
-    }
+function Counter_ (d = 1) { //eslint-disable-line
+  return function ({h, action$}) {
+    const sum$ = action$(-1).merge(action$(+1))
+      .scan((sum, x) => sum + x.action, 0)
+    this.l(sum$.map(sum => ['h2', {}, sum]))
+    this.n(m.of(['button', { on: {click: +1} }]), ({h}) => {
+      this.l(m.of(['span', {}, '+']))
+      if (d > 0) this.n(m.of(['div', {}]), Counter(d - 1))
+    })
+    this.n(m.of(['button', { on: {click: -1} }]), ({h}) => {
+      this.l(m.of(['span', {}, '-']))
+      if (d > 0) this.n(m.of(['div', {}]), Counter(d - 1))
+    })
   }
 }
 

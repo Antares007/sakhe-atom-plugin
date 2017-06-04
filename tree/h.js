@@ -1,27 +1,49 @@
 
 const m = require('most')
 const sh = require('snabbdom').h
+const animationFrame$ = require('./animation-frame')
 
 module.exports = H
 
 function H (sel, data, pith) {
+  return Hinner(sel, data, (function map (pith) {
+    return function (rays) {
+      const l = (sel, data, x) => this.l(sel, data, x)
+      const n = (sel, data, pith) => this.n(sel, data, map(pith))
+      pith.call({}, Object.assign({}, rays, {
+        h: (sel, x, y) => {
+          const keys = Object.keys(x)
+          const data$ = (
+            x && x.source
+            ? x
+            : keys.length === 0
+            ? m.of({})
+            : m.combineArray(
+              (...values) => values.reduce((data, value, i) => {
+                data[keys[i]] = value
+                return data
+              }, {}),
+              keys.map(key => x[key] && x[key].source ? x[key] : m.of(x[key]))
+            )
+          )
+          return typeof y === 'function' ? n(sel, data$, y) : l(sel, data$, y)
+        },
+        animationFrame$
+      }))
+    }
+  })(pith))
+}
+
+function Hinner (sel, data, pith) {
   const cmb$ = (...args) => m.combineArray(
     (...array) => array,
-    args.map(a => a.source ? a : m.of(a))
+    args.map(a => a && a.source ? a : m.of(a))
   )
-  if (!pith) {
-    pith = data
-    data = {}
-  }
   return hBark(cmb$(sel, data), (function map (pith) {
     return function (rays) {
       const l = (sel, data, x) => this.l(cmb$(sel, data, x))
       const n = (sel, data, pith) => this.n(cmb$(sel, data), map(pith))
-      pith.call({l, n}, Object.assign({}, rays, {
-        h: (sel, data, x) => {
-          return typeof x === 'function' ? n(sel, data, x) : l(sel, data, x)
-        }
-      }))
+      pith.call({l, n}, rays)
     }
   })(pith))
 }
@@ -33,11 +55,11 @@ function hBark (cont$, pith) {
     actionModule
   ])
   const toVnode = require('snabbdom/tovnode').default
+  const tag = path => ([sel, data, x]) => {
+    data.path = path
+    return [sel, data, x]
+  }
   return hInnerBark(cont$, addPathRay([0], (function map (pith) {
-    const tag = path => ([sel, data, x]) => {
-      data.path = path
-      return [sel, data, x]
-    }
     return function ({path}) {
       const $ = actionModule.action$.filter(x => x.vnode.data.path.startsWith(path))
       const action$ = a => $.filter(x => typeof a === 'function' ? a(x) : x.action === a)
@@ -46,7 +68,7 @@ function hBark (cont$, pith) {
         n: (objs$, pith) => this.n(objs$.map(tag(path)), map(pith))
       }, { path, action$, $ })
     }
-  })(pith)))
+  }(pith))))
     // .tap(x => console.log(x))
     .reduce(patch, toVnode(document.getElementById('root-node')))
 

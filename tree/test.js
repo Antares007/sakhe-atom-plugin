@@ -1,7 +1,7 @@
 const H = require('./h')
 const m = require('most') //eslint-disable-line
 
-H('div#root-node.a', Animation(0))
+H('div#root-node.a', {}, Animation(3))
 
 function camelCase (str) {
   const [first, ...last] = str.split('-')
@@ -18,69 +18,90 @@ function css (str) {
   }, {})
 }
 
+function css$ (strings, ...exprs) {
+  if (exprs.length === 0) return m.of(css(strings[0]))
+  return m.combineArray(
+    (...exprs) => css(strings.slice(1).reduce((rez, s, i) => rez + exprs[i] + s, strings[0])),
+    exprs.map(x => x && x.source ? x.skipRepeats() : m.of(x))
+  )
+}
+
 function Animation (d = 4, w = 2) { //eslint-disable-line
   return ({h, path, $}) => {
     h('div.contentContainer', {
-      style: css(`
-        width: 100%;
-        height: 100%;
-        border: 5px black solid;
+      style: css$`
+        width: 100%;height: 100%;
+        border: 5px white solid;
         overflow: hidden;
-        background-color: #FFFF00;
-        `),
+        background-color: #FFFF66;
+        `,
       props: {
         width: '300px'
       }
-    }, ({h}) => {
-      const a$ = require('./animation-frame')
-      const xy$ = a$.scan(incrementer => incrementer >= Math.PI * 2 ? 0 : incrementer + 0.01, 0)
-        .map(i => [125 + 100 * Math.cos(i), 5 + 100 * Math.sin(i)])
-      h('img', xy$.map(([x, y]) => ({
-        style: css(`
-          position: relative;
-          left: ${x}px;
-          top: ${y}px;
-        `),
-        attrs: css(`
-          src: ../tree/donut.png
-          width: 300px
-          height: 300px
-        `)
-      })), '')
+    }, ({h, animationFrame$}) => {
+      const cycle$ = animationFrame$.scan(i => i >= Math.PI * 2 ? 0 : i + (0.01), 0)
+      const sin$ = cycle$.map(i => Math.sin(i))
+      const cos$ = cycle$.map(i => Math.cos(i))
+      const attrs = css(`src: ../tree/donut.png;width: 300px;height: 300px`)
+      h('img', {
+        style: css$`
+          position: relative
+          left: ${cos$.map(i => 125 + 100 * i)}px
+          top: ${sin$.map(i => 125 + 100 * i)}px
+        `,
+        attrs
+      })
     })
   }
 }
+
 function Tree (d = 4, w = 2) { //eslint-disable-line
   return ({h, path, $}) => {
     h('button', { on: {click: 'from:' + path} }, path)
-    h('span', $.map(x => x.action).startWith(''))
+    h('span', {}, $.map(x => x.action).startWith(''))
     for (var i = 0; i < w; i++) {
       if (d > 0) h('div', {style: {paddingLeft: '20px'}}, Tree(d - 1, w))
     }
   }
 }
 
-function Counter (d = 3) { //eslint-disable-line
-  const color = 100 + d * 30
-  return ({h, action$}) => {
+function Counter (d = 4) { //eslint-disable-line
+  return ({h, action$, animationFrame$}) => {
     const sum$ = action$(-1).merge(action$(+1))
       .scan((sum, x) => sum + x.action, 0)
+    const picycle$ = animationFrame$.scan(i => i >= Math.PI * 2 ? 0 : i + 0.1, 0)
+    const sin$ = picycle$.map(i => Math.sin(i))
+    const cos$ = picycle$.map(i => Math.cos(i))
+    const color$ = wave$ => wave$.map(i => 100 + d * 20 + Math.floor(30 * i))
+
     h('div', {style: {padding: '5px 10px', textAlign: 'center'}}, ({h}) => {
-      h('h2', {}, sum$)
       h('button', {
         on: {click: +1},
-        style: { backgroundColor: `rgb(255, ${color}, ${color})` }
+        style: css$`
+          position: relative
+          left: ${sin$.map(i => Math.floor(i * 5))}px
+          top: ${cos$.map(i => Math.floor(i * 5))}px
+          backgroundColor: rgb(255, ${color$(sin$)}, ${color$(cos$)})
+        `
       }, ({h}) => {
         h('span', {}, '+')
         if (d > 0) h('div', {}, Counter(d - 1))
       })
+
       h('button', {
         on: {click: -1},
-        style: { backgroundColor: `rgb(${color}, ${color}, 255)` }
+        style: css$`
+          position: relative
+          left: ${cos$.map(i => Math.floor(i * 5))}px
+          top: ${sin$.map(i => Math.floor(i * 5))}px
+          backgroundColor: rgb(${color$(cos$)}, ${color$(sin$)}, 255)
+        `
       }, ({h}) => {
         h('span', {}, '-')
         if (d > 0) h('div', {}, Counter(d - 1))
       })
+
+      h('h2', {}, sum$)
     })
   }
 }

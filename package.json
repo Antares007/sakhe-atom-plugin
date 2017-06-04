@@ -1,8 +1,8 @@
 {
   "name": "sakhe",
   "main": "./lib/arakela-world-count",
-  "version": "0.0.1",
-  "description": "A short description of your package",
+  "version": "0.0.0",
+  "description": "sakhe",
   "keywords": [],
   "repository": "https://github.com/atom/sakhe",
   "license": "MIT",

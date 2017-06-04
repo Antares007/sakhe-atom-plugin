@@ -1,32 +1,9 @@
 const H = require('./h')
 const m = require('most') //eslint-disable-line
 
-H('div#root-node.a', {}, Animation(3))
+H('div#root-node.a', {}, Animation())
 
-function camelCase (str) {
-  const [first, ...last] = str.split('-')
-  return first + last.reduce((s, a) => s + a[0].toUpperCase() + a.slice(1), '')
-}
-
-function css (str) {
-  return str.split(/;|\n/).reduce((s, kvStr) => {
-    const [keyStr, valueStr] = kvStr.split(':')
-    const key = camelCase(keyStr.trim())
-    if (key === '') return s
-    s[key] = valueStr.trim()
-    return s
-  }, {})
-}
-
-function css$ (strings, ...exprs) {
-  if (exprs.length === 0) return m.of(css(strings[0]))
-  return m.combineArray(
-    (...exprs) => css(strings.slice(1).reduce((rez, s, i) => rez + exprs[i] + s, strings[0])),
-    exprs.map(x => x && x.source ? x.skipRepeats() : m.of(x))
-  )
-}
-
-function Animation (d = 4, w = 2) { //eslint-disable-line
+function Animation () { //eslint-disable-line
   return ({h, path, $}) => {
     h('div.contentContainer', {
       style: css$`
@@ -39,7 +16,7 @@ function Animation (d = 4, w = 2) { //eslint-disable-line
         width: '300px'
       }
     }, ({h, animationFrame$}) => {
-      const cycle$ = animationFrame$.scan(i => i >= Math.PI * 2 ? 0 : i + (0.01), 0)
+      const cycle$ = animationFrame$.scan(i => i >= Math.PI * 2 ? 0 : i + (0.3), 0)
       const sin$ = cycle$.map(i => Math.sin(i))
       const cos$ = cycle$.map(i => Math.cos(i))
       const attrs = css(`src: ../tree/donut.png;width: 300px;height: 300px`)
@@ -69,7 +46,7 @@ function Counter (d = 4) { //eslint-disable-line
   return ({h, action$, animationFrame$}) => {
     const sum$ = action$(-1).merge(action$(+1))
       .scan((sum, x) => sum + x.action, 0)
-    const picycle$ = animationFrame$.scan(i => i >= Math.PI * 2 ? 0 : i + 0.1, 0)
+    const picycle$ = animationFrame$.scan(i => i >= Math.PI * 2 ? 0 : i + 0.01, 0)
     const sin$ = picycle$.map(i => Math.sin(i))
     const cos$ = picycle$.map(i => Math.cos(i))
     const color$ = wave$ => wave$.map(i => 100 + d * 20 + Math.floor(30 * i))
@@ -79,8 +56,7 @@ function Counter (d = 4) { //eslint-disable-line
         on: {click: +1},
         style: css$`
           position: relative
-          left: ${sin$.map(i => Math.floor(i * 5))}px
-          top: ${cos$.map(i => Math.floor(i * 5))}px
+          border-radius: ${sin$.map(i => Math.abs(Math.floor(i * 20)))}px
           backgroundColor: rgb(255, ${color$(sin$)}, ${color$(cos$)})
         `
       }, ({h}) => {
@@ -92,8 +68,7 @@ function Counter (d = 4) { //eslint-disable-line
         on: {click: -1},
         style: css$`
           position: relative
-          left: ${cos$.map(i => Math.floor(i * 5))}px
-          top: ${sin$.map(i => Math.floor(i * 5))}px
+          border-radius: ${cos$.map(i => Math.abs(Math.floor(i * 20)))}px
           backgroundColor: rgb(${color$(cos$)}, ${color$(sin$)}, 255)
         `
       }, ({h}) => {
@@ -143,4 +118,27 @@ function Form () { //eslint-disable-line
     ))
     // this.return(action$('add').map(() => state))
   }
+}
+
+function camelCase (str) {
+  const [first, ...last] = str.split('-')
+  return first + last.reduce((s, a) => s + a[0].toUpperCase() + a.slice(1), '')
+}
+
+function css (str) {
+  return str.split(/;|\n/).reduce((s, kvStr) => {
+    const [keyStr, valueStr] = kvStr.split(':')
+    const key = camelCase(keyStr.trim())
+    if (key === '') return s
+    s[key] = valueStr.trim()
+    return s
+  }, {})
+}
+
+function css$ (strings, ...exprs) {
+  if (exprs.length === 0) return m.of(css(strings[0]))
+  return m.combineArray(
+    (...exprs) => css(strings.slice(1).reduce((rez, s, i) => rez + exprs[i] + s, strings[0])),
+    exprs.map(x => x && x.source ? x.skipRepeats() : m.of(x))
+  )
 }

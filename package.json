@@ -4,7 +4,7 @@
   "version": "0.0.0",
   "description": "sakhe",
   "keywords": [],
-  "repository": "https://github.com/atom/sakhe",
+  "repository": "https://github.com/antares007/sakhe",
   "license": "MIT",
   "engines": {
     "atom": ">=1.0.0 <2.0.0"

@@ -1,13 +1,16 @@
 const H = require('./h')
 const m = require('most') //eslint-disable-line
+const animationFrame$ = require('./animation-frame')
 
-H('div#root-node.a', {}, Animation())
-
+H('div#root-node.a', {}, Counter())
 function Animation () { //eslint-disable-line
-  return ({h, path, $}) => {
+  return ({h}) => {
+    const cycle$ = animationFrame$.scan(i => i >= Math.PI * 2 ? 0 : i + (0.05), 0)
+    const sin$ = cycle$.map(i => Math.sin(i))
+    const cos$ = cycle$.map(i => Math.cos(i))
     h('div.contentContainer', {
       style: css$`
-        width: 100%;height: 100%;
+        width: 100%; height: 100%;
         border: 5px white solid;
         overflow: hidden;
         background-color: #FFFF66;
@@ -15,11 +18,8 @@ function Animation () { //eslint-disable-line
       props: {
         width: '300px'
       }
-    }, ({h, animationFrame$}) => {
-      const cycle$ = animationFrame$.scan(i => i >= Math.PI * 2 ? 0 : i + (0.3), 0)
-      const sin$ = cycle$.map(i => Math.sin(i))
-      const cos$ = cycle$.map(i => Math.cos(i))
-      const attrs = css(`src: ../tree/donut.png;width: 300px;height: 300px`)
+    }, ({h}) => {
+      const attrs = css(`src: ../tree/donut.png; width: 300px; height: 300px`)
       h('img', {
         style: css$`
           position: relative
@@ -42,21 +42,23 @@ function Tree (d = 4, w = 2) { //eslint-disable-line
   }
 }
 
-function Counter (d = 4) { //eslint-disable-line
+function Counter (d = 1) { //eslint-disable-line
   return ({h, action$, animationFrame$}) => {
     const sum$ = action$(-1).merge(action$(+1))
       .scan((sum, x) => sum + x.action, 0)
-    const picycle$ = animationFrame$.scan(i => i >= Math.PI * 2 ? 0 : i + 0.01, 0)
+    const picycle$ = animationFrame$.scan(i => i >= Math.PI * 2 ? 0 : i + 0.1, 0)
     const sin$ = picycle$.map(i => Math.sin(i))
     const cos$ = picycle$.map(i => Math.cos(i))
     const color$ = wave$ => wave$.map(i => 100 + d * 20 + Math.floor(30 * i))
-
+    const r = 10
     h('div', {style: {padding: '5px 10px', textAlign: 'center'}}, ({h}) => {
       h('button', {
         on: {click: +1},
         style: css$`
           position: relative
           border-radius: ${sin$.map(i => Math.abs(Math.floor(i * 20)))}px
+          // left: ${sin$.map(i => Math.floor(r * i))}px
+          // top: ${cos$.map(i => Math.floor(r * i))}px
           backgroundColor: rgb(255, ${color$(sin$)}, ${color$(cos$)})
         `
       }, ({h}) => {
@@ -69,6 +71,8 @@ function Counter (d = 4) { //eslint-disable-line
         style: css$`
           position: relative
           border-radius: ${cos$.map(i => Math.abs(Math.floor(i * 20)))}px
+          // left: ${cos$.map(i => Math.floor(r * i))}px
+          // top: ${sin$.map(i => Math.floor(r * i))}px
           backgroundColor: rgb(${color$(cos$)}, ${color$(sin$)}, 255)
         `
       }, ({h}) => {
@@ -129,7 +133,7 @@ function css (str) {
   return str.split(/;|\n/).reduce((s, kvStr) => {
     const [keyStr, valueStr] = kvStr.split(':')
     const key = camelCase(keyStr.trim())
-    if (key === '') return s
+    if (key === '' || key.startsWith('//')) return s
     s[key] = valueStr.trim()
     return s
   }, {})

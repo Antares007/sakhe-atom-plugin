@@ -10,7 +10,7 @@ function Cons (head, tail) {
   if (!(
     tail instanceof Cons || tail === nil
   )) throw new Error('argument error tail')
-  if (!(this instanceof Cons)) return new Cons(Cons)
+  if (!(this instanceof Cons)) return new Cons(head, tail)
   this.head = head
   this.tail = tail
 }

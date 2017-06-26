@@ -63,7 +63,7 @@ console.profile('run')
 patchBark(
   rootNode,
   H('div#root-node', {}, h => {
-    h('div', {style: css$`width: 100%; height: 50%;`}, Animation(3, 3))
+    h('div', {style: css$`width: 100%; height: 50%;`}, Tree(3, 3))
     h('div', {style: css$`width: 100%; height: 50%;`}, Animation(3, 3))
   })
 ).then(function log (vnode) {

@@ -13,20 +13,9 @@
     "@most/hold": "^2.0.0",
     "create-torrent": "^3.29.2",
     "debug": "^2.6.3",
-    "invariant": "^2.2.2",
     "most": "^1.2.2",
-    "prop-types": "^15.5.8",
-    "ramda": "^0.23.0",
-    "react": "^15.5.4",
-    "react-dnd": "^2.3.0",
-    "react-dnd-html5-backend": "^2.3.0",
-    "react-dom": "^15.5.4",
-    "react-hyperscript": "^3.0.0",
-    "react-redux": "^5.0.4",
-    "sanctuary": "^0.12.2",
     "snabbdom": "^0.6.7",
     "supercop.js": "^2.0.1",
-    "union-type": "^0.3.3",
     "webtorrent": "^0.98.18"
   }
 }

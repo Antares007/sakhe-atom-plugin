@@ -6,7 +6,7 @@ const patch = require('snabbdom').init([
   actionModule
 ])
 const animationFrame$ = require('./animation-frame').take(2000)
-const cycle$ = animationFrame$.scan(i => i >= Math.PI * 2 ? 0 : i + (0.03), 0)
+const cycle$ = animationFrame$.scan(i => i >= Math.PI * 2 ? 0 : i + (0.3), 0)
 const sin$ = cycle$.map(i => Math.sin(i))
 const cos$ = cycle$.map(i => Math.cos(i))
 const {nil} = require('./list')
@@ -18,7 +18,7 @@ H('div#root-node', {}, (h, path) => {
   h('button', {on: {click: 'load'}}, h => h('load'))
   h('div', {}, action$(path)
                 .filter(x => x.action === 'load')
-                .constant(Tree(3, 2))
+                .constant(Counter(3, 2))
                 .startWith(h => h('press button'))
   )
 }).reduce(patch, toVnode(rootNode))
@@ -58,8 +58,8 @@ function Counter (d = 1) { //eslint-disable-line
         style: css$`
           position: relative
           border-radius: ${sin$.map(i => Math.abs(Math.floor(i * 20)))}px
-          // left: ${cos$.map(i => Math.floor(r * i))}px
-          // top: ${sin$.map(i => Math.floor(r * i))}px
+          left: ${cos$.map(i => Math.floor(r * i))}px
+          top: ${sin$.map(i => Math.floor(r * i))}px
           backgroundColor: rgb(255, ${color$(sin$)}, ${color$(cos$)})
         `
       }, h => {
@@ -71,8 +71,8 @@ function Counter (d = 1) { //eslint-disable-line
         style: css$`
           position: relative
           border-radius: ${cos$.map(i => Math.abs(Math.floor(i * 20)))}px
-          // left: ${sin$.map(i => Math.floor(r * i))}px
-          // top: ${cos$.map(i => Math.floor(r * i))}px
+          left: ${sin$.map(i => Math.floor(r * i))}px
+          top: ${cos$.map(i => Math.floor(r * i))}px
           backgroundColor: rgb(${color$(sin$)}, ${color$(cos$)}, 255)
         `
       }, h => {

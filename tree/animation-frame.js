@@ -1,19 +1,20 @@
-const m = require('most')
+const { Stream } = require('most')
 
-module.exports = new m.Stream({
+module.exports = new Stream({
   run (sink, scheduler) {
-    var token
-    var disposable
-    function nextFrame () {
-      disposable = scheduler.asap(m.PropagateTask.event(scheduler.now(), sink))
-      token = window.requestAnimationFrame(nextFrame)
-    }
-    nextFrame()
-    return {
+    const taskRequestFrame = {
+      run (t) {
+        const nextFrame = () => {
+          console.timeStamp('nextFrame')
+          sink.event(t, t)
+          this.token = window.requestAnimationFrame(nextFrame)
+        }
+        nextFrame()
+      },
       dispose () {
-        window.cancelAnimationFrame(token)
-        disposable.dispose()
+        window.cancelAnimationFrame(this.token)
       }
     }
+    return scheduler.asap(taskRequestFrame)
   }
 }).multicast()

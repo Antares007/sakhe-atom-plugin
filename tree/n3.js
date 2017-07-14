@@ -7,7 +7,7 @@ const patch = require('snabbdom').init([
 ])
 
 const H$ = require('./h$')
-const animationFrame$ = require('./animation-frame').take(2000)
+const animationFrame$ = require('./animation-frame').take(200)
 const cycle$ = animationFrame$.scan(i => i >= Math.PI * 2 ? 0 : i + (0.05), 0)
 const sin$ = cycle$.map(i => Math.sin(i))
 const cos$ = cycle$.map(i => Math.cos(i))
@@ -23,7 +23,6 @@ function Test () {
     h('h1', {}, h => h(value$.startWith('').map(value => 'hello ' + value)))
   }
 }
-
 
 function Counter (d = 1) { //eslint-disable-line
   return h => {
@@ -67,7 +66,7 @@ function Tree (d = 1, w = 3) { //eslint-disable-line
     h('button', {on: {click: h.path}}, h => {
       h(h.path.toString())
     })
-    h(h.$.constant('a').startWith('b'))
+    h(h.$.map(x => x.action.toString()).startWith(''))
     for (var i = 0; i < w; i++) {
       if (d > 0) {
         h('div', {

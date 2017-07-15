@@ -1,3 +1,4 @@
+const debug = require('debug')
 const m = require('most')
 const toVnode = require('snabbdom/tovnode').default
 const actionModule = require('../lib/drivers/snabbdom/actionModule')
@@ -7,8 +8,8 @@ const patch = require('snabbdom').init([
 ])
 
 const H$ = require('./h$')
-const animationFrame$ = require('./animation-frame').take(200)
-const cycle$ = animationFrame$.scan(i => i >= Math.PI * 2 ? 0 : i + (0.05), 0)
+const animationFrame$ = require('./animation-frame').take(15)
+const cycle$ = animationFrame$.scan(i => i >= Math.PI * 2 ? 0 : i + (0.5), 0)
 const sin$ = cycle$.map(i => Math.sin(i))
 const cos$ = cycle$.map(i => Math.cos(i))
 
@@ -63,21 +64,25 @@ function Counter (d = 1) { //eslint-disable-line
 
 function Tree (d = 1, w = 3) { //eslint-disable-line
   return (h) => {
-    h('button', {on: {click: h.path}}, h => {
-      h(h.path.toString())
+    const rootPath = h.path
+    const action = h.path
+    h('button', {on: {click: action}}, h => {
+      h(rootPath.toString() + ' - ' + h.path.toString())
     })
-    h(h.$.map(x => x.action.toString()).startWith(''))
+    h(h.$.filter(x => x.action.endsWith(action)).map(x => x.action.toString()).startWith(''))
     for (var i = 0; i < w; i++) {
-      if (d > 0) {
-        h('div', {
-          style: css$`
-            paddingLeft: ${sin$.map(i => Math.floor(i * 20 + 20.5))}px
-          `
-        }, m.of(Tree(d - 1, w))
-            .delay(100 + Math.random() * 1000)
-            .merge(m.of(h => h('Loading...')))
-        )
-      }
+      let action = d + '' + i
+      h('div', {
+        style: css$`
+          paddingLeft: ${sin$.map(i => Math.floor(i * 20 + 20.5))}px;
+        `,
+        on: { click: action }
+      },
+      h.$.filter(x => x.action === action)
+          .take(1)
+          .map(x => h => h('div', {}, Tree(d - 1, w)))
+          .startWith(h => h('button', {}, h => h('open')))
+      )
     }
   }
 }

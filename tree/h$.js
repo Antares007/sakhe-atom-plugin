@@ -13,36 +13,23 @@ module.exports = H$
 function H$ (sel, data, pith) {
   const thisPath = data.path || nil
   return $(pith).map(pith => ATree(
-    deltac(sel, Object.assign({}, data, {path: thisPath})),
+    deltac(sel, $(data).map(data => Object.assign({path: thisPath}, data))),
     chainRing(pathRing(thisPath, apiRing(pith)))
   )).switchLatest()
 }
 
 function apiRing (pith) {
   return function (node, leaf, path) {
-    const h = (a, b, c) => (
-      typeof b === 'undefined' && typeof c === 'undefined'
-      ? leaf(a)
-      : node(a, b, c instanceof m.Stream ? c.map(apiRing) : apiRing(c))
+    const h = (sel, data, pith) => (
+      typeof data === 'undefined' && typeof pith === 'undefined'
+      ? leaf(sel)
+      : node(sel, data, $(pith).map(apiRing))
     )
     h.path = path
-    h.$ = action$(path).multicast()
+    h.$ = actionModule.action$
+      .filter(x => x.vnode.data.path.endsWith(path))
+      .multicast()
     pith(h)
-  }
-}
-
-function action$ (apath) {
-  return actionModule
-    .action$
-    .filter(x => endsWith(x.vnode.data.path, apath))
-  function endsWith (apath, path) {
-    return (
-      apath === path
-        ? true
-        : apath === nil
-          ? false
-          : endsWith(apath.tail, path)
-    )
   }
 }
 
@@ -52,11 +39,11 @@ function pathRing (path, pith) {
     pith(
       (sel, data, pith) => {
         const thisPath = Cons(i++, path)
-        node(sel, Object.assign({}, data, {path: thisPath}), (
-          pith instanceof m.Stream
-          ? pith.map(pith => pathRing(thisPath, pith))
-          : pathRing(thisPath, pith)
-        ))
+        node(
+          sel,
+          $(data).map(data => Object.assign({path: thisPath}, data)),
+          $(pith).map(pith => pathRing(thisPath, pith))
+        )
       },
       leaf,
       path
@@ -80,14 +67,14 @@ function chainRing (pith) {
 function $ (x) {
   return (
     x instanceof m.Stream
-    ? x
-    : x && typeof x === 'object' && Object.keys(x).some(key => x[key] instanceof m.Stream)
-    ? m.combineArray(function () {
-      return Object.keys(x).reduce((s, key, i) => {
-        s[key] = arguments[i]
-        return s
-      }, {})
-    }, Object.keys(x).map(key => $(x[key])))
-    : m.of(x)
+      ? x
+      : x && typeof x === 'object' && Object.keys(x).some(key => x[key] instanceof m.Stream)
+        ? m.combineArray(function () {
+          return Object.keys(x).reduce((s, key, i) => {
+            s[key] = arguments[i]
+            return s
+          }, {})
+        }, Object.keys(x).map(key => $(x[key])))
+        : m.of(x)
   )
 }

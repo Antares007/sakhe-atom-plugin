@@ -1,6 +1,9 @@
 const nil = Object.create({
   toString () {
     return 'Nil'
+  },
+  endsWith (path) {
+    return path === nil
   }
 })
 
@@ -16,5 +19,9 @@ function Cons (head, tail) {
 }
 
 Cons.prototype.toString = function toString () {
-  return `Cons(${this.head}, ${this.tail.toString()})`
+  return `${this.head}/${this.tail.toString()}`
+}
+
+Cons.prototype.endsWith = function endsWith (path) {
+  return this === path ? true : this.tail.endsWith(path)
 }

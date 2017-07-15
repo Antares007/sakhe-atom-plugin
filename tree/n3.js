@@ -1,10 +1,9 @@
-const debug = require('debug')
+const debug = require('debug') // eslint-disable-line
 const m = require('most')
 const toVnode = require('snabbdom/tovnode').default
-const actionModule = require('../lib/drivers/snabbdom/actionModule')
 const patch = require('snabbdom').init([
   ...['class', 'props', 'style', 'attributes'].map(name => require('snabbdom/modules/' + name).default),
-  actionModule
+  require('../lib/drivers/snabbdom/actionModule')
 ])
 
 const H$ = require('./h$')
@@ -17,15 +16,7 @@ H$('div#root-node', {}, Tree(3, 2))
   .reduce(patch, toVnode(document.getElementById('root-node')))
   .then(console.log.bind(console))
 
-function Test () {
-  return h => {
-    const value$ = h.$.map(x => x.event.target.value)
-    h('input', {props: {type: 'text'}, on: {input: 'input'}}, h => {})
-    h('h1', {}, h => h(value$.startWith('').map(value => 'hello ' + value)))
-  }
-}
-
-function Counter (d = 1) { //eslint-disable-line
+function Counter (d = 1) { // eslint-disable-line
   return h => {
     const sum$ = h.$.map(x => x.action).scan((sum, v) => sum + v, 0)
     const color$ = wave$ => wave$.map(i => 100 + d * 20 + Math.floor(30 * i))
@@ -62,7 +53,7 @@ function Counter (d = 1) { //eslint-disable-line
   }
 }
 
-function Tree (d = 1, w = 3) { //eslint-disable-line
+function Tree (d = 1, w = 3) { // eslint-disable-line
   return (h) => {
     const rootPath = h.path
     const action = h.path
@@ -72,16 +63,18 @@ function Tree (d = 1, w = 3) { //eslint-disable-line
     h(h.$.filter(x => x.action.endsWith(action)).map(x => x.action.toString()).startWith(''))
     for (var i = 0; i < w; i++) {
       let action = d + '' + i
-      h('div', {
-        style: css$`
-          paddingLeft: ${sin$.map(i => Math.floor(i * 20 + 20.5))}px;
-        `,
-        on: { click: action }
-      },
-      h.$.filter(x => x.action === action)
-          .take(1)
-          .map(x => h => h('div', {}, Tree(d - 1, w)))
-          .startWith(h => h('button', {}, h => h('open')))
+      h(
+        'div',
+        {
+          style: css$`
+            paddingLeft: ${sin$.map(i => Math.floor(i * 20 + 20.5))}px;
+          `,
+          on: { click: action }
+        },
+        h.$.filter(x => x.action === action)
+            .take(1)
+            .map(x => h => h('div', {}, Tree(d - 1, w)))
+            .startWith(h => h('button', {}, h => h('open')))
       )
     }
   }
@@ -109,17 +102,3 @@ function css$ (strings, ...exprs) {
     exprs.map(x => x instanceof m.Stream ? x : m.of(x))
   )
 }
-
-  // const H = require('./h')
-  // patch(
-  //   toVnode(document.getElementById('root-node')),
-  //   H('div#root-node', {}, h => {
-  //     h('button', {}, h => {
-  //       h(42)
-  //       h('button', {}, h => {
-  //         h(43)
-  //       })
-  //     })
-  //     h('hi')
-  //   })
-  // )

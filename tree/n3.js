@@ -7,14 +7,38 @@ const patch = require('snabbdom').init([
 ])
 
 const H$ = require('./h$')
+const {Cons} = require('./list')
 const animationFrame$ = require('./animation-frame').take(15)
 const cycle$ = animationFrame$.scan(i => i >= Math.PI * 2 ? 0 : i + (0.5), 0)
 const sin$ = cycle$.map(i => Math.sin(i))
 const cos$ = cycle$.map(i => Math.cos(i))
 
-H$('div#root-node', {}, Tree(3, 2))
+const fs = require('fs')
+const promisify = f => (...args) => new Promise(
+  (resolve, reject) => f(
+    ...args,
+    (err, value) => err ? reject(err) : resolve(value)
+  )
+)
+const r$ = f => {
+  const p = promisify(f)
+  return (...args) => m.fromPromise(p(...args))
+}
+const readdir$ = r$(fs.readdir.bind(fs))
+
+H$('div#root-node', {}, Folder(__dirname))
   .reduce(patch, toVnode(document.getElementById('root-node')))
   .then(console.log.bind(console))
+
+function Folder (path) { // eslint-disable-line
+  return h => {
+    const action = 'action1'
+    const b$ = h.$.filter(x => x.action === action).scan(b => !b, false)
+    h('button', {on: {click: action}}, h => h('switch'))
+    h('div', {}, b$.map(x => x ? Counter(2) : Tree(2, 2)))
+    h(H$('div', { path: Cons('counter', h.path) }, Counter(2)))
+  }
+}
 
 function Counter (d = 1) { // eslint-disable-line
   return h => {
@@ -71,7 +95,7 @@ function Tree (d = 1, w = 3) { // eslint-disable-line
           `,
           on: { click: action }
         },
-        h.$.filter(x => x.action === action)
+        h.$.filter(x => x.action === action && x.event.target instanceof window.HTMLButtonElement)
             .take(1)
             .map(x => h => h('div', {}, Tree(d - 1, w)))
             .startWith(h => h('button', {}, h => h('open')))

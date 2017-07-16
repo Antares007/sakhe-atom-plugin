@@ -59,7 +59,7 @@ function chainRing (pith) {
         ? leaf(pith.map(pith => ATree(deltac(sel, data), chainRing(pith))).switchLatest())
         : node(deltac(sel, data), chainRing(pith))
       ),
-      x => leaf($(x).map(x => x + ''))
+      x => leaf($(x))
     )
   }
 }

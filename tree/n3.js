@@ -8,8 +8,8 @@ const patch = require('snabbdom').init([
 
 const H$ = require('./h$')
 const {Cons} = require('./list')
-const animationFrame$ = require('./animation-frame').take(15)
-const cycle$ = animationFrame$.scan(i => i >= Math.PI * 2 ? 0 : i + (0.5), 0)
+const animationFrame$ = require('./animation-frame').take(1500)
+const cycle$ = animationFrame$.scan(i => i >= Math.PI * 2 ? 0 : i + (0.05), 0)
 const sin$ = cycle$.map(i => Math.sin(i))
 const cos$ = cycle$.map(i => Math.cos(i))
 
@@ -25,6 +25,15 @@ const r$ = f => {
   return (...args) => m.fromPromise(p(...args))
 }
 const readdir$ = r$(fs.readdir.bind(fs))
+const dispose = require('most/lib/disposable/dispose')
+const watch$ = (path) => new m.Stream({
+  run (sink, scheduler) {
+    const watcher = fs.watch(path, (eventType, filename) => {
+      scheduler.asap(m.PropagateTask.event({eventType, filename}, sink))
+    })
+    return dispose.create(() => watcher.close())
+  }
+})
 
 H$('div#root-node', {}, Folder(__dirname))
   .reduce(patch, toVnode(document.getElementById('root-node')))
@@ -32,11 +41,18 @@ H$('div#root-node', {}, Folder(__dirname))
 
 function Folder (path) { // eslint-disable-line
   return h => {
-    const action = 'action1'
-    const b$ = h.$.filter(x => x.action === action).scan(b => !b, false)
-    h('button', {on: {click: action}}, h => h('switch'))
-    h('div', {}, b$.map(x => x ? Counter(2) : Tree(2, 2)))
-    h(H$('div', { path: Cons('counter', h.path) }, Counter(2)))
+    // const action = 'action1'
+    // const b$ = h.$.filter(x => x.action === action).scan(b => !b, false)
+    // h('button', {on: {click: action}}, h => h('switch'))
+    // h('div', {}, b$.map(x => x ? Counter(2) : Tree(2, 2)))
+    // h(H$('div', { path: Cons('counter', h.path) }, Counter(2)))
+    h('ul', {}, readdir$('/').map(list => h => {
+      for (let i = 0; i < list.length; i++) {
+        h('li', {}, h => {
+          h(list[i])
+        })
+      }
+    }))
   }
 }
 
@@ -51,8 +67,8 @@ function Counter (d = 1) { // eslint-disable-line
         style: css$`
           position: relative
           border-radius: ${sin$.map(i => Math.abs(Math.floor(i * 20)))}px
-          left: ${cos$.map(i => Math.floor(r * i))}px
-          top: ${sin$.map(i => Math.floor(r * i))}px
+          // left: ${cos$.map(i => Math.floor(r * i))}px
+          // top: ${sin$.map(i => Math.floor(r * i))}px
           backgroundColor: rgb(255, ${color$(sin$)}, ${color$(cos$)})
         `
       }, h => {

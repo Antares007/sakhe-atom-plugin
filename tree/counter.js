@@ -1,4 +1,5 @@
 const m = require('most')
+const css$ = require('./css$')
 const mount = require('./mount')
 const animationFrame$ = require('./animation-frame').take(1500)
 const cycle$ = animationFrame$.scan(i => i >= Math.PI * 2 ? 0 : i + (0.05), 0)
@@ -43,27 +44,4 @@ function Counter (d = 1) { // eslint-disable-line
       h('h2', {}, h => h(sum$))
     })
   }
-}
-
-function camelCase (str) {
-  const [first, ...last] = str.split('-')
-  return first + last.reduce((s, a) => s + a[0].toUpperCase() + a.slice(1), '')
-}
-
-function css (str) {
-  return str.split(/;|\n/).reduce((s, kvStr) => {
-    const [keyStr, valueStr] = kvStr.split(':')
-    const key = camelCase(keyStr.trim())
-    if (key === '' || key.startsWith('//')) return s
-    s[key] = valueStr.trim()
-    return s
-  }, {})
-}
-
-function css$ (strings, ...exprs) {
-  if (exprs.length === 0) return m.of(css(strings[0]))
-  return m.combineArray(
-    (...exprs) => css(strings.slice(1).reduce((rez, s, i) => rez + exprs[i] + s, strings[0])),
-    exprs.map(x => x instanceof m.Stream ? x : m.of(x))
-  )
 }

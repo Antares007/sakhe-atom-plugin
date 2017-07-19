@@ -7,7 +7,7 @@ const sin$ = cycle$.map(i => Math.sin(i))
 const elm = document.getElementById('root-node')
 mount(elm, Tree(2, 2))
 
-function Tree (d = 1, w = 3) { // eslint-disable-line
+function Tree (d = 1, w = 3) {
   return (h) => {
     const rootPath = h.path
     const action = h.path

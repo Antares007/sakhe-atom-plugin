@@ -34,15 +34,12 @@ function Folder (path) {
 
     h('ul', {}, entries$.map(entries => h => {
       for (let i = 0; i < entries.length; i++) {
-        let action = 'open ' + entries[i].path
-        const openClose$ = h.$
-          .filter(x => x.action === action && x.event.target instanceof window.HTMLButtonElement)
-          .map(x => {
-            x.event.stopPropagation()
-            return x.event.target.className === 'open'
-          })
+        let actClose = 'close ' + i
+        let actOpen = 'open ' + i
+        const openClose$ = h.$.filter(x => x.action === actClose).constant(false)
+          .merge(h.$.filter(x => x.action === actOpen).constant(true))
           .startWith(false)
-        h('li', {on: { click: action }}, (
+        h('li', {}, (
           entries[i].isDir
           ? h => h(
             'div',
@@ -51,13 +48,13 @@ function Folder (path) {
               .map(op => (
                 op
                 ? h => {
-                  h('div', {}, h => {
-                    h('button.close', {}, h => h('-'))
+                  h('button', {on: { click: actClose }}, h => {
+                    h('-')
                     h(entries[i].name)
                   })
                   h('div', {}, Folder(entries[i].path))
                 }
-                : h => h('button.open', {}, h => h(entries[i].name))
+                : h => h('button', {on: { click: actOpen }}, h => h(entries[i].name))
               ))
           )
           : h => h(entries[i].name)

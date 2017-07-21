@@ -2,7 +2,7 @@ const m = require('most')
 const css$ = require('./css$')
 const mount = require('./mount')
 const animationFrame$ = require('./animation-frame').take(1500)
-const cycle$ = animationFrame$.scan(i => i >= Math.PI * 2 ? 0 : i + (0.05), 0)
+const cycle$ = animationFrame$.scan(i => i >= Math.PI * 2 ? 0 : i + (0.15), 0)
 const sin$ = cycle$.map(i => Math.sin(i))
 const cos$ = cycle$.map(i => Math.cos(i))
 
@@ -18,7 +18,7 @@ function Counter (d = 1) { // eslint-disable-line
       h('button', {
         on: {click: +1},
         style: css$`
-          position: relative
+          position: relative; outline: none
           border-radius: ${sin$.map(i => Math.abs(Math.floor(i * 20)))}px
           // left: ${cos$.map(i => Math.floor(r * i))}px
           // top: ${sin$.map(i => Math.floor(r * i))}px
@@ -31,17 +31,17 @@ function Counter (d = 1) { // eslint-disable-line
       h('button', {
         on: {click: -1},
         style: css$`
-          position: relative
+          position: relative; outline: none
           border-radius: ${cos$.map(i => Math.abs(Math.floor(i * 20)))}px
-          left: ${sin$.map(i => Math.floor(r * i))}px
-          top: ${cos$.map(i => Math.floor(r * i))}px
+          // left: ${sin$.map(i => Math.floor(r * i))}px
+          // top: ${cos$.map(i => Math.floor(r * i))}px
           backgroundColor: rgb(${color$(sin$)}, ${color$(cos$)}, 255)
         `
       }, h => {
         h('span', {}, h => h('-'))
         if (d > 0) h('div', {}, Counter(d - 1))
       })
-      h('h2', {}, h => h(sum$))
+      h('h3', {}, h => h(sum$))
     })
   }
 }

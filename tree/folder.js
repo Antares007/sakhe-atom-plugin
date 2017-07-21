@@ -1,65 +1,55 @@
 const debug = require('debug') // eslint-disable-line
-const css$ = require('./css$') // eslint-disable-line
+const css$ = require('./css$')
 const m = require('most')
 const mount = require('./mount')
-const fs = require('fs')
-const promisify = f => (...args) => new Promise(
-  (resolve, reject) => f(
-    ...args,
-    (err, value) => err ? reject(err) : resolve(value)
-  )
-)
-const r$ = f => {
-  const p = promisify(f)
-  return (...args) => m.fromPromise(p(...args))
-}
+const {join} = require('path')
+const watch$ = require('./watch$')
 
 const elm = document.getElementById('root-node')
-mount(elm, Folder(__dirname.slice(0, __dirname.lastIndexOf('/'))))
+mount(elm, Folder('/'))
 
 function Folder (path) {
   return h => {
-    const stat = promisify(fs.stat.bind(fs))
-    const readdir$ = r$(fs.readdir.bind(fs))
-    const {join} = require('path')
-    const entries$ = readdir$(path).map(names => Promise.all(
-      names.map(
-        name => stat(join(path, name)).then(stat => ({
-          name,
-          isDir: stat.isDirectory(),
-          path: join(path, name)
-        }))
-      )
-    )).await().map(entries => entries.filter(e => e.name !== '.git')).multicast()
+    h.$.map(x => x.action).observe(debug(path))
+    const entries$ = watch$(path).map(entrs => entrs.map(
+      ({name, stat}) => ({ name, isDir: stat.isDirectory(), path: join(path, name) })
+    ))
+    h(
+      'ul',
+      {style: css$` list-style-type: none; `},
+      entries$
+        .map(Entries)
+        .flatMapError(err => m.of(h => h('li', h => h(err.message))))
+        .startWith(h => h('li', h => h('Loading...')))
+    )
+  }
+}
 
-    h('ul', {}, entries$.map(entries => h => {
-      for (let i = 0; i < entries.length; i++) {
-        let actClose = 'close ' + i
-        let actOpen = 'open ' + i
-        const openClose$ = h.$.filter(x => x.action === actClose).constant(false)
-          .merge(h.$.filter(x => x.action === actOpen).constant(true))
-          .startWith(false)
-        h('li', {}, (
-          entries[i].isDir
-          ? h => h(
-            'div',
-            {},
-            openClose$
-              .map(op => (
-                op
-                ? h => {
-                  h('button', {on: { click: actClose }}, h => {
-                    h('-')
-                    h(entries[i].name)
-                  })
-                  h('div', {}, Folder(entries[i].path))
-                }
-                : h => h('button', {on: { click: actOpen }}, h => h(entries[i].name))
-              ))
-          )
-          : h => h(entries[i].name)
-        ))
-      }
-    }).startWith(h => h('loading...')))
+function Entries (entries) {
+  return h => {
+    for (let i = 0; i < entries.length; i++) {
+      let actClose = 'close ' + entries[i].path
+      let actOpen = 'open  ' + entries[i].path
+      const openClose$ = m.merge(
+        h.$.filter(x => x.action === actClose).constant(false),
+        h.$.filter(x => x.action === actOpen).constant(true)
+      ).startWith(false)
+      h(
+        'li',
+        entries[i].isDir
+        ? h => h(
+          'div',
+          openClose$.map(op => (
+            op
+            ? h => {
+              h('button', {on: { click: actClose }}, h => h('-' + entries[i].name))
+              h('div', {}, Folder(entries[i].path))
+            }
+            : h => h('button', {on: { click: actOpen }}, h => h('+ ' + entries[i].name))
+          ))
+        )
+        : h => h(entries[i].name)
+      )
+    }
   }
 }

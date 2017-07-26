@@ -5,17 +5,21 @@ const mount = require('./mount')
 const {join} = require('path')
 const watch$ = require('./watch$')
 
-const elm = document.getElementById('root-node')
-mount(elm, Folder(__dirname.slice(0, __dirname.lastIndexOf('/'))))
+mount(document.getElementById('root-node'), Folder(join(__dirname, '../..')))
 
-function Folder (path, state = {}) {
+function Folder (path) {
   return h => {
+    const state = {}
     h.$.map(x => x.action).scan((s, [path, isOpen]) => {
       s[path] = isOpen
       return s
-    }, state)
-      .tap(debug(path))
-      .drain()
+    }, state).drain()
+    FolderRec(path, state)(h)
+  }
+}
+
+function FolderRec (path, state) {
+  return h => {
     const entries$ = watch$(path).map(entrs => entrs.map(
       ({name, stat}) => ({ name, isDir: stat.isDirectory(), path: join(path, name) })
     ))
@@ -33,27 +37,28 @@ function Folder (path, state = {}) {
 function Entries (entries, state) {
   return h => {
     for (let i = 0; i < entries.length; i++) {
-      let actClose = [entries[i].path, false]
-      let actOpen_ = [entries[i].path, true]
+      let {path, name, isDir} = entries[i]
+      let actClose = [path, false]
+      let actOpen_ = [path, true]
       const openClose$ = h.$
         .filter(x => x.action === actClose || x.action === actOpen_)
         .map(x => x.action[1])
-        .startWith(!!state[entries[i].path])
+        .startWith(!!state[path])
       h(
         'li',
-        entries[i].isDir
+        isDir
         ? h => h(
           'div',
           openClose$.map(op => (
             op
             ? h => {
-              h('button', {on: { click: actClose }}, h => h('-' + entries[i].name))
-              h('div', {}, Folder(entries[i].path, state))
+              h('button', {on: {click: actClose}}, h => h('- ' + name))
+              h('div', {}, FolderRec(path, state))
             }
-            : h => h('button', {on: { click: actOpen_ }}, h => h('+ ' + entries[i].name))
+            : h => h('button', {on: {click: actOpen_}}, h => h('+ ' + name))
           ))
         )
-        : h => h(entries[i].name)
+        : h => h(name)
       )
     }
   }

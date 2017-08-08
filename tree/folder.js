@@ -4,6 +4,9 @@ const m = require('most')
 const mount = require('./mount')
 const {join} = require('path')
 const watch$ = require('./watch$')
+const eq = (as, bs) =>
+  as.length === bs.length &&
+  !as.some((v, i) => bs[i] !== v)
 
 mount(document.getElementById('root-node'), Folder(join(__dirname, '../..')))
 
@@ -20,9 +23,16 @@ function Folder (path) {
 
 function FolderRec (path, state) {
   return h => {
-    const entries$ = watch$(path).map(entrs => entrs.map(
-      ({name, stat}) => ({ name, isDir: stat.isDirectory(), path: join(path, name) })
-    ))
+    // const change$ = watch$(path).multicast()
+    // change$
+    //   .filter(([prev, curr]) => !eq(Object.keys(prev), Object.keys(curr)))
+    //   .map(([prev, curr]) => {})
+
+    const entries$ = watch$(path)
+      .map(([prev, curr]) => Object.keys(curr).map(name => ({name, stat: curr[name]})))
+      .map(entrs => entrs.map(
+        ({name, stat}) => ({ name, isDir: stat.isDirectory(), path: join(path, name) })
+      ))
     h(
       'ul',
       {style: css$` list-style-type: none; `},

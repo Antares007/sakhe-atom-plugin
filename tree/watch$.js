@@ -6,26 +6,46 @@ const promisify = require('./promisify')
 const _stat = promisify(fs.stat.bind(fs))
 const _readdir = promisify(fs.readdir.bind(fs))
 const {join} = require('path')
-const readdir = path => _readdir(path).then(names => Promise.all(
-  names.map(name => _stat(join(path, name)).then((stat) => ({ name, stat })))
-))
 
-module.exports = path => watch$(path)
-  .map(() => readdir(path))
-  .startWith(readdir(path))
-  .await()
+const readdir = path => _readdir(path).then(names => {
+  const s = {}
+  const stats = names.map(
+    name => _stat(join(path, name))
+              .then(stat => { s[name] = stat })
+  )
+  return Promise.all(stats).then(() => s)
+})
 
-function watch$ (path) {
-  return new m.Stream({
-    run (sink, scheduler) {
-      const watcher = fs.watch(path)
-      watcher.on('change', (eventType, filename) => {
-        scheduler.asap(m.PropagateTask.event({eventType, filename}, sink))
-      })
-      watcher.once('error', (err) => {
-        scheduler.asap(m.PropagateTask.error(err, sink))
-      })
-      return dispose.create(() => watcher.close())
-    }
-  })
+// pairwise :: a -> Stream a -> Stream (a, a)
+const pairwise = (initial, stream) => m.loop(
+  (prev, current) => ({ seed: current, value: [prev, current] }),
+  initial,
+  stream
+)
+
+class WatchSource {
+  constructor (path) {
+    this.path = path
+  }
+  run (sink, scheduler) {
+    const path = this.path
+    const watcher = fs.watch(path)
+    const error$ = m.fromEvent('error', watcher)
+      .take(1)
+      .flatMap(err => m.throwError(err))
+    const change$ = pairwise(
+      {},
+      m.fromEvent('change', watcher)
+        .map(() => readdir(path))
+        .startWith(readdir(path))
+        .await()
+        .merge(error$)
+    )
+    return dispose.all([
+      dispose.create(() => watcher.close()),
+      change$.source.run(sink, scheduler)
+    ])
+  }
 }
+
+module.exports = path => new m.Stream(new WatchSource(path))

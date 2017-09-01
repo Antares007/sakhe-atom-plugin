@@ -40,10 +40,11 @@ function pathRing (path, pith) {
   return function (node, leaf) {
     pith(
       (sel, data, pith) => {
-        const thisPath = Cons(i++, path)
+        const key = i++
+        const thisPath = Cons(key, path)
         node(
           sel,
-          $(data).map(data => Object.assign({path: thisPath}, data)),
+          $(data).map(data => Object.assign({path: thisPath, key}, data)),
           $(pith).map(pith => pathRing(thisPath, pith))
         )
       },

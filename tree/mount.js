@@ -13,7 +13,11 @@ const patch = require('snabbdom').init([
 module.exports = function mount (elm, pith, path = require('./list').nil) {
   const {sel, data} = toVnode(elm)
   data.path = path
-  return H$(sel, data, stateRing({}, pathRing(path, apiRing(actionModule.action$)(pith))))
-      .tap(require('debug')('patch'))
-      .reduce(patch, {sel, data, elm, children: []})
+  return H$(
+    sel,
+    data,
+    stateRing({}, pathRing(path, apiRing(actionModule.action$)(pith)))
+  )
+    // .tap(require('debug')('patch'))
+    .reduce(patch, {sel, data, elm, children: []})
 }

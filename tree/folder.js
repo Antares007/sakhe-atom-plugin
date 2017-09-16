@@ -14,7 +14,7 @@ function Folder (path) {
     h(
       'ul',
       {style: css$` list-style-type: none; `},
-      watch$(path)
+      watch$(path).take(1)
         .map(([p, c]) => c)
         .map(entries => Entries(path, entries))
         .flatMapError(err => m.of(h => h('li', h => h(err.message))))

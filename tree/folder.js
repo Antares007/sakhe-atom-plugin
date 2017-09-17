@@ -7,7 +7,7 @@ const watch$ = require('./watch$')
 // const {hold} = require('@most/hold')
 // const eq = (a, b) => a.length === b.length && !a.some((v, i) => b[i] !== v)
 
-mount(document.getElementById('root-node'), Folder(pathJoin(__dirname, '..')))
+mount(document.getElementById('root-node'), Folder(pathJoin(__dirname, '../a')))
 
 function Folder (path) {
   return h => {

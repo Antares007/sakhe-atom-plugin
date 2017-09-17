@@ -16,7 +16,7 @@ module.exports = function mount (elm, pith, path = require('./list').nil) {
   return H$(
     sel,
     data,
-    stateRing({}, pathRing(path, apiRing(actionModule.action$)(pith)))
+    pathRing(path, stateRing(0, apiRing(actionModule.action$)(pith)))
   )
     // .tap(require('debug')('patch'))
     .reduce(patch, {sel, data, elm, children: []})

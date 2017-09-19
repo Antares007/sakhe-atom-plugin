@@ -1,7 +1,6 @@
 const $ = require('./$')
 const m = require('most')
 const ATree = require('./atree')
-const JSON5 = require('json5')
 
 module.exports = State
 
@@ -43,5 +42,5 @@ State('a', (n, l) => {
   l(m.of(s => s + 1))
 })
 .scan((state, r) => r(state), {})
-.tap(s => console.log(JSON5.stringify(s)))
+.tap(s => console.log(JSON.stringify(s)))
 .drain()

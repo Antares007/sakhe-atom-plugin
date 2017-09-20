@@ -2,47 +2,45 @@ const $ = require('./$')
 const m = require('most')
 const ATree = require('./atree')
 
-module.exports = State
+module.exports = State$
 
-function State (namespace, pith) {
+function State$ (pith, baseState = {}) {
   return $(pith)
     .map(pith => ATree(
-      reduce$s => scope(namespace, m.mergeArray(reduce$s)),
-      chainRing(pith))
-    )
+      reduce$s => m.mergeArray(reduce$s)
+        .scan((s, r) => r(s), baseState)
+        .skip(1),
+      chainRing(pith, baseState)
+    ))
     .switchLatest()
 }
 
-function chainRing (pith) {
+function chainRing (pith, baseState) {
   return function (node, leaf) {
     pith(
-      (namespace, pith) => leaf(State(namespace, pith)),
-      reducer$ => leaf(scope('state', reducer$))
+      (key, pith) => leaf(m.combine(
+        (key, g) => s => { s[key] = g; return s },
+        $(key),
+        State$(pith, baseState[key] || {})
+      )),
+      (key, pith) => leaf(m.combine(
+        (key, g) => s => { s[key] = g; return s },
+        $(key),
+        State$(pith, baseState[key] || [])
+      )),
+      (key, r) => leaf(m.combine(
+        (key, r) => s => { s[key] = r(s[key]); return s },
+        $(key),
+        $(r))
+      )
     )
   }
 }
 
-function scope (namespace, $) {
-  return $.map(r => gstate => {
-    if (!gstate) return { [namespace]: r(void 0) }
-    gstate[namespace] = r(gstate[namespace])
-    return gstate
-  })
-}
-
 if (require.main === module) {
-  State('a', (n, l) => {
-    l(m.of(s => 1))
-    n('b', (n, l) => {
-      l(m.of(s => 1))
-      l(m.of(s => s + 1))
-      n('c', m.periodic(1000).take(3).scan(a => a + 1, 0).map(i => (n, l) => {
-        l(m.of(s => i))
-      }))
-    })
-    l(m.of(s => s + 1))
-  })
-  .scan((state, r) => r(state), {})
+  State$((o, a, v) => {
+    a('a', (o, a, v) => v(0, s => s + 1))
+  }, {a: [1]})
   .tap(s => console.log(JSON.stringify(s)))
   .drain()
 }

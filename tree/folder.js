@@ -7,6 +7,7 @@ const watch$ = require('./watch$')
 // const {hold} = require('@most/hold')
 // const eq = (a, b) => a.length === b.length && !a.some((v, i) => b[i] !== v)
 const H$ = require('./h$')
+const State$ = require('./state$')
 const pathRing = require('./path-ring')
 const apiRing = require('./api-ring')
 const nil = require('./list').nil
@@ -27,11 +28,16 @@ const patch = require('snabbdom').init([
   actionModule
 ])
 
-H$(
-  'div#root-node',
-  {},
-  pathRing(nil, apiRing(action$)(Folder(pathJoin(__dirname, '../a'))))
-).reduce(patch, toVnode(document.getElementById('root-node')))
+State$((o, a, v) => {
+  v('vnode$', H$(
+    'div#root-node',
+    {},
+    pathRing(nil, apiRing(action$)(Folder(pathJoin(__dirname, '..'))))
+  ).map(s => () => s))
+})
+  .tap(s => console.log(JSON.stringify(s)))
+  .map(s => s.vnode$)
+  .reduce(patch, toVnode(document.getElementById('root-node')))
 
 function Folder (path) {
   return h => {

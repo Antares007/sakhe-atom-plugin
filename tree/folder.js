@@ -1,13 +1,37 @@
 const debug = require('debug') // eslint-disable-line
 const css$ = require('./css$')
 const m = require('most')
-const mount = require('./mount')
+const {async: subject} = require('most-subject')
 const {join: pathJoin} = require('path')
 const watch$ = require('./watch$')
 // const {hold} = require('@most/hold')
 // const eq = (a, b) => a.length === b.length && !a.some((v, i) => b[i] !== v)
+const H$ = require('./h$')
+const pathRing = require('./path-ring')
+const apiRing = require('./api-ring')
+const nil = require('./list').nil
+const toVnode = require('snabbdom/tovnode').default
+const action$ = subject()
 
-mount(document.getElementById('root-node'), Folder(pathJoin(__dirname, '../a')))
+const actionModule = require('../lib/drivers/snabbdom/actionModule')(
+  function (event) {
+    action$.next({
+      vnode: this,
+      action: this.data.on[event.type],
+      event
+    })
+  }
+)
+const patch = require('snabbdom').init([
+  ...['class', 'props', 'style', 'attributes'].map(name => require('snabbdom/modules/' + name).default),
+  actionModule
+])
+
+H$(
+  'div#root-node',
+  {},
+  pathRing(nil, apiRing(action$)(Folder(pathJoin(__dirname, '../a'))))
+).reduce(patch, toVnode(document.getElementById('root-node')))
 
 function Folder (path) {
   return h => {

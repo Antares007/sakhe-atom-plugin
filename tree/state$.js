@@ -30,17 +30,19 @@ function scope (namespace, $) {
   })
 }
 
-State('a', (n, l) => {
-  l(m.of(s => 1))
-  n('b', (n, l) => {
+if (require.main === module) {
+  State('a', (n, l) => {
     l(m.of(s => 1))
+    n('b', (n, l) => {
+      l(m.of(s => 1))
+      l(m.of(s => s + 1))
+      n('c', m.periodic(1000).take(3).scan(a => a + 1, 0).map(i => (n, l) => {
+        l(m.of(s => i))
+      }))
+    })
     l(m.of(s => s + 1))
-    n('c', m.periodic(1000).take(3).scan(a => a + 1, 0).map(i => (n, l) => {
-      l(m.of(s => i))
-    }))
   })
-  l(m.of(s => s + 1))
-})
-.scan((state, r) => r(state), {})
-.tap(s => console.log(JSON.stringify(s)))
-.drain()
+  .scan((state, r) => r(state), {})
+  .tap(s => console.log(JSON.stringify(s)))
+  .drain()
+}

@@ -1,46 +1,42 @@
 const $ = require('./$')
 const m = require('most')
 const ATree = require('./atree')
-
-module.exports = State$
-
-function State$ (pith, baseState = {}) {
-  return $(pith)
-    .map(pith => ATree(
-      reduce$s => m.mergeArray(reduce$s)
-        .scan((s, r) => r(s), baseState)
-        .skip(1),
-      chainRing(pith, baseState)
-    ))
-    .switchLatest()
+const scope = key => r => s => {
+  s[key] = r(s[key])
+  return s
 }
 
-function chainRing (pith, baseState) {
-  return function (node, leaf) {
-    pith(
-      (key, pith) => leaf(m.combine(
-        (key, g) => s => { s[key] = g; return s },
-        $(key),
-        State$(pith, baseState[key] || {})
-      )),
-      (key, pith) => leaf(m.combine(
-        (key, g) => s => { s[key] = g; return s },
-        $(key),
-        State$(pith, baseState[key] || [])
-      )),
-      (key, r) => leaf(m.combine(
-        (key, r) => s => { s[key] = r(s[key]); return s },
-        $(key),
-        $(r))
+module.exports = pith => State$(pith).scan((s, r) => r(s)).skip(1)
+
+function State$ (pith, initState = {}, key = void 0) {
+  return $(pith).map(pith => ATree(
+    reduce$s => m.mergeArray(reduce$s).startWith(() => initState),
+    function (_, leaf) {
+      pith(
+        (key, type, pith) => leaf(
+          $(key)
+            .flatMap(key => State$(pith, type, key)
+            .map(scope(key)))
+        ),
+        (key, r) => leaf($(key).flatMap(key => $(r).map(scope(key)))),
+        key
       )
-    )
-  }
+    }
+  )).switchLatest()
 }
 
 if (require.main === module) {
-  State$((o, a, v) => {
-    a('a', (o, a, v) => v(0, s => s + 1))
-  }, {a: [1]})
+  State$((n, l) => {
+    n('b', {}, (n, l) => {
+      l('c', s => 1)
+    })
+    n('b2', [], (n, l) => {
+      l(10, s => 1)
+    })
+    l('a', s => 1)
+  })
+  .scan((s, r) => r(s))
+  .skip(1)
   .tap(s => console.log(JSON.stringify(s)))
   .drain()
 }

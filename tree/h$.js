@@ -13,15 +13,13 @@ module.exports = H$
 
 function H$ (sel, data, pith) {
   return $(pith)
-    .map(pith => ATree(makeDeltac($(sel), $(data)), chainRing(pith)))
-    .switchLatest()
-}
-
-function chainRing (pith) {
-  return function (node, leaf) {
-    pith(
-      (sel, data, pith) => leaf(H$(sel, data, pith)),
-      x => leaf($(x))
-    )
-  }
+    .map(pith => ATree(
+      makeDeltac($(sel), $(data)),
+      function (node, leaf) {
+        pith(
+          (sel, data, pith) => leaf(H$(sel, data, pith)),
+          x => leaf($(x))
+        )
+      })
+    ).switchLatest()
 }

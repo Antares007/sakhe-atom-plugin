@@ -4,47 +4,10 @@ const ATree$ = require('./atree$')
 const {h} = require('snabbdom')
 const {Cons, nil} = require('./list')
 
-const makeDeltac = (sel, data) => m.combine(
-  (s, d) => vnode$s => m.combineArray((...chlds) => h(s, d, chlds), vnode$s),
-  $(sel),
-  $(data)
-)
+module.exports = createH$
 
-module.exports = (action$, path = nil) => (sel, data, pith) => ATree$(
-  makeDeltac(sel, data),
-  map(pathRing(path, apiRing(action$, pith)))
-)
-
-function map (pith) {
-  return $(pith).map(pith => function (node, leaf) {
-    pith(
-      (sel, data, pith) => node(makeDeltac(sel, data), map(pith)),
-      x => leaf($(x))
-    )
-  })
-}
-
-function pathRing (path, pith) {
-  return $(pith).map(pith => function (node, leaf) {
-    var i = 0
-    pith(
-      (sel, data, pith) => {
-        const key = i++
-        const thisPath = Cons(key, path)
-        node(
-          sel,
-          $(data).map(data => Object.assign({path: thisPath, key}, data)),
-          pathRing(thisPath, pith)
-        )
-      },
-      leaf,
-      path
-    )
-  })
-}
-
-function apiRing (action$, pith) {
-  return $(pith).map(pith => function (node, leaf, path) {
+function createH$ (action$, path = nil) {
+  const apiRing = (action$, pith) => $(pith).map(pith => function (node, leaf, path) {
     const h = (...args) => (
       args.length === 3
       ? node($(args[0]), $(args[1]), apiRing(action$, args[2]))
@@ -60,4 +23,38 @@ function apiRing (action$, pith) {
       .multicast()
     pith(h)
   })
+
+  const pathRing = (path, pith) => $(pith).map(pith => function (node, leaf) {
+    var i = 0
+    pith(
+      (sel, data, pith) => {
+        const key = i++
+        const thisPath = Cons(key, path)
+        node(
+          sel,
+          $(data).map(data => Object.assign({path: thisPath, key}, data)),
+          pathRing(thisPath, pith)
+        )
+      },
+      leaf,
+      path
+    )
+  })
+
+  const makeDeltac = (sel, data) => m.combine(
+    (s, d) => vnode$s => m.combineArray((...chlds) => h(s, d, chlds), vnode$s),
+    $(sel),
+    $(data)
+  )
+  const map = pith => $(pith).map(pith => function (node, leaf) {
+    pith(
+      (sel, data, pith) => node(makeDeltac(sel, data), map(pith)),
+      x => leaf($(x))
+    )
+  })
+
+  return (sel, data, pith) => ATree$(
+    makeDeltac(sel, data),
+    map(pathRing(path, apiRing(action$, pith)))
+  )
 }

@@ -34,7 +34,7 @@ const patch = require('snabbdom').init([
 H$(
   'div#root-node',
   {},
-  Folder(pathJoin(__dirname, '../a'))
+  Folder(pathJoin(__dirname, '..'))
 ).reduce(patch, toVnode(document.getElementById('root-node')))
 
 function Folder (path) {

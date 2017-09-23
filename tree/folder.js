@@ -6,10 +6,12 @@ const {join: pathJoin} = require('path')
 const watch$ = require('./watch$')
 // const {hold} = require('@most/hold')
 // const eq = (a, b) => a.length === b.length && !a.some((v, i) => b[i] !== v)
-const State$ = require('./state$')
 const toVnode = require('snabbdom/tovnode').default
+
 const action$ = subject()
-const H$ = require('./create-h$')(action$)
+const h = require('./create-h$')(action$)
+const state$ = subject()
+const s = require('./create-s$')(state$)
 
 const actionModule = require('../lib/drivers/snabbdom/actionModule')(function (event) {
   action$.next({ vnode: this, action: this.data.on[event.type], event })
@@ -19,23 +21,17 @@ const patch = require('snabbdom').init([
   actionModule
 ])
 
-// State$((n, l) => {
-//   l('vnode$', H$(
-//     'div#root-node',
-//     {},
-//     Folder(pathJoin(__dirname, '../a'))
-//   ).map(s => () => s))
-// })
-//   .tap(s => console.log(JSON.stringify(s)))
-//   .map(s => s.vnode$)
-//   .filter(Boolean)
-//   .reduce(patch, toVnode(document.getElementById('root-node')))
-
-H$(
-  'div#root-node',
-  {},
-  Folder(pathJoin(__dirname, '..'))
-).reduce(patch, toVnode(document.getElementById('root-node')))
+s('root', {}, s => {
+  s(
+    'vnode$',
+    h('div#root-node', {}, Folder(pathJoin(__dirname, '..'))).map(vnode => () => vnode)
+  )
+})
+  .scan((s, r) => r(s), {})
+  .tap(s => state$.next(s))
+  .map(s => s.root).filter(Boolean)
+  .map(s => s.vnode$).filter(Boolean)
+  .reduce(patch, toVnode(document.getElementById('root-node')))
 
 function Folder (path) {
   return h => {

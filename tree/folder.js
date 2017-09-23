@@ -6,13 +6,10 @@ const {join: pathJoin} = require('path')
 const watch$ = require('./watch$')
 // const {hold} = require('@most/hold')
 // const eq = (a, b) => a.length === b.length && !a.some((v, i) => b[i] !== v)
-const H$ = require('./h$')
 const State$ = require('./state$')
-const pathRing = require('./path-ring')
-const apiRing = require('./api-ring')
-const nil = require('./list').nil
 const toVnode = require('snabbdom/tovnode').default
 const action$ = subject()
+const H$ = require('./create-h$')(action$)
 
 const actionModule = require('../lib/drivers/snabbdom/actionModule')(function (event) {
   action$.next({ vnode: this, action: this.data.on[event.type], event })
@@ -22,17 +19,23 @@ const patch = require('snabbdom').init([
   actionModule
 ])
 
-State$((n, l) => {
-  l('vnode$', H$(
-    'div#root-node',
-    {},
-    pathRing(nil, apiRing(action$)(Folder(pathJoin(__dirname, '../a'))))
-  ).map(s => () => s))
-})
-  .tap(s => console.log(JSON.stringify(s)))
-  .map(s => s.vnode$)
-  .filter(Boolean)
-  .reduce(patch, toVnode(document.getElementById('root-node')))
+// State$((n, l) => {
+//   l('vnode$', H$(
+//     'div#root-node',
+//     {},
+//     Folder(pathJoin(__dirname, '../a'))
+//   ).map(s => () => s))
+// })
+//   .tap(s => console.log(JSON.stringify(s)))
+//   .map(s => s.vnode$)
+//   .filter(Boolean)
+//   .reduce(patch, toVnode(document.getElementById('root-node')))
+
+H$(
+  'div#root-node',
+  {},
+  Folder(pathJoin(__dirname, '../a'))
+).reduce(patch, toVnode(document.getElementById('root-node')))
 
 function Folder (path) {
   return h => {
@@ -42,7 +45,7 @@ function Folder (path) {
       watch$(path).take(1)
         .map(([p, c]) => c)
         .map(entries => Entries(path, entries))
-        .flatMapError(err => m.of(h => h('li', h => h(err.message))))
+        .flatMapError(err => m.of(h => h('li', {}, h => h(err.message))))
     )
   }
 }

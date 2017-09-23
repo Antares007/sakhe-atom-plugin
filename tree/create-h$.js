@@ -46,15 +46,15 @@ function createH$ (action$, path = nil) {
     $(sel),
     $(data)
   )
-  const map = pith => $(pith).map(pith => function (node, leaf) {
+  const chainRing = pith => $(pith).map(pith => function (node, leaf) {
     pith(
-      (sel, data, pith) => node(makeDeltac(sel, data), map(pith)),
+      (sel, data, pith) => node(makeDeltac(sel, data), chainRing(pith)),
       x => leaf($(x))
     )
   })
 
   return (sel, data, pith) => ATree$(
     makeDeltac(sel, data),
-    map(pathRing(path, apiRing(action$, pith)))
+    chainRing(pathRing(path, apiRing(action$, pith)))
   )
 }

@@ -1,7 +1,7 @@
 function ATree (deltac, pith) {
   const as = []
-  const node = (deltac, pith) => as.push(ATree(deltac, pith))
   const leaf = a => as.push(a)
+  const node = (deltac, pith) => leaf(ATree(deltac, pith))
   pith(node, leaf)
   return deltac(as)
 }

@@ -14,11 +14,16 @@ const patch = require('snabbdom').init([
 const h$ = require('./create-h$')(action$)
 
 const animationFrame$ = require('./animation-frame').take(1500)
-const cycle$ = animationFrame$.scan(i => i >= Math.PI * 2 ? 0 : i + (0.05), 0)
+const cycle$ = animationFrame$.scan(i => i >= Math.PI * 2 ? 0 : i + (0.15), 0)
 const sin$ = cycle$.map(i => Math.sin(i))
 const cos$ = cycle$.map(i => Math.cos(i))
 
-h$('div#root-node', {}, Counter(3))
+h$('div#root-node', {}, h => {
+  h('div', showHideRing(Counter(0)))
+  h('div', showHideRing(Counter(1)))
+  h('div', showHideRing(Counter(2)))
+  h('div', showHideRing(Counter(3)))
+})
   .reduce(patch, toVnode(document.getElementById('root-node')))
 
 function Counter (d = 1) { // eslint-disable-line
@@ -55,5 +60,18 @@ function Counter (d = 1) { // eslint-disable-line
       })
       h('h3', {}, h => h(sum$))
     })
+  }
+}
+
+function showHideRing (pith) {
+  return function showHidePith (h) {
+    const showHide$ = h.$.filter(({action}) => action === showHide$)
+      .scan(b => !b, true).multicast()
+    h(
+      'button',
+      {on: {click: showHide$}},
+      showHide$.map(show => h => h(show ? 'hide' : 'show'))
+    )
+    h('div', {}, showHide$.map(show => show ? pith : h => {}))
   }
 }

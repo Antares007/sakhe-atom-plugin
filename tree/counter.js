@@ -18,14 +18,7 @@ const cycle$ = animationFrame$.scan(i => i >= Math.PI * 2 ? 0 : i + (0.15), 0)
 const sin$ = cycle$.map(i => Math.sin(i))
 const cos$ = cycle$.map(i => Math.cos(i))
 
-h$('div#root-node', {
-  style: css$`
-    height: 100vh;
-    background-color: black;
-    color: white;
-    overflow-y: scroll;
-  `
-}, h => {
+h$('div#root-node', h => {
   h('div', showHideRing(Counter(0)))
   h('div', showHideRing(Counter(1)))
   h('div', showHideRing(Counter(2)))
@@ -79,6 +72,6 @@ function showHideRing (pith) {
       {on: {click: showHide$}},
       showHide$.map(show => h => h(show ? 'hide' : 'show'))
     )
-    h('div', {}, showHide$.map(show => show ? pith : h => {}))
+    h('div', showHide$.map(show => show ? pith : h => {}))
   }
 }

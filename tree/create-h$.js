@@ -64,6 +64,6 @@ function bark (sel, data, pith) {
 
 function createH$ (action$, path = nil) {
   return (sel, data, pith) => bark(
-    sel, data, pathRing(path, apiRing(action$, pith))
+    sel, data && pith ? data : {}, pathRing(path, apiRing(action$, pith || data))
   )
 }

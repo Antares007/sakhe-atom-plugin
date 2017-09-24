@@ -9,13 +9,13 @@
   "engines": {
     "atom": ">=1.0.0 <2.0.0"
   },
+  "scripts": {
+    "start": "electron ."
+  },
   "dependencies": {
-    "@most/hold": "^2.0.0",
-    "create-torrent": "^3.29.2",
-    "debug": "^2.6.3",
-    "most": "^1.2.2",
-    "snabbdom": "^0.6.7",
-    "supercop.js": "^2.0.1",
-    "webtorrent": "^0.98.18"
+    "debug": "^2.6.8",
+    "most": "^1.7.1",
+    "most-subject": "^5.3.0",
+    "snabbdom": "^0.6.9"
   }
 }

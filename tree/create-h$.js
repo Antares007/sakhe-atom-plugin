@@ -6,8 +6,8 @@ const {Cons, nil} = require('./list')
 
 module.exports = createH$
 
-function createH$ (action$, path = nil) {
-  const apiRing = (action$, pith) => $(pith).map(pith => function (node, leaf, path) {
+function apiRing (action$, pith) {
+  return $(pith).map(pith => function (node, leaf, path) {
     const h = (...args) => (
       args.length === 3
       ? node($(args[0]), $(args[1]), apiRing(action$, args[2]))
@@ -23,8 +23,10 @@ function createH$ (action$, path = nil) {
       .multicast()
     pith(h)
   })
+}
 
-  const pathRing = (path, pith) => $(pith).map(pith => function (node, leaf) {
+function pathRing (path, pith) {
+  return $(pith).map(pith => function (node, leaf) {
     var i = 0
     pith(
       (sel, data, pith) => {
@@ -40,19 +42,26 @@ function createH$ (action$, path = nil) {
       path
     )
   })
+}
 
-  const makeDeltac = (sel, data) => m.combine(
+function makeDeltac (sel, data) {
+  return m.combine(
     (s, d) => vnode$s => m.combineArray((...chlds) => h(s, d, chlds), vnode$s),
     $(sel),
     $(data)
   )
-  const chainRing = pith => $(pith).map(pith => function (node, leaf) {
+}
+
+function chainRing (pith) {
+  return $(pith).map(pith => function (node, leaf) {
     pith(
       (sel, data, pith) => node(makeDeltac(sel, data), chainRing(pith)),
       x => leaf($(x))
     )
   })
+}
 
+function createH$ (action$, path = nil) {
   return (sel, data, pith) => ATree$(
     makeDeltac(sel, data),
     chainRing(pathRing(path, apiRing(action$, pith)))

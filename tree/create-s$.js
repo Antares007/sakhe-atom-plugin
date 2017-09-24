@@ -4,8 +4,8 @@ const ATree$ = require('./atree$')
 
 module.exports = createS$
 
-function createS$ (state$) {
-  const apiRing = (state$, pith) => $(pith).map(pith =>
+function apiRing (state$, pith) {
+  return $(pith).map(pith =>
     function apiPith (node, leaf, key) {
       const thisState$ = state$.map(s => s[key]).filter(Boolean)
       const s = (...args) => {
@@ -19,7 +19,10 @@ function createS$ (state$) {
       pith(s)
     }
   )
-  const updateState = (s, key, ns) => (
+}
+
+function updateState (s, key, ns) {
+  return (
     s[key] === ns
     ? s
     : Array.isArray(s)
@@ -27,14 +30,20 @@ function createS$ (state$) {
       .map((_, i) => i === key ? ns : s[i])
     : Object.assign({}, s, { [key]: ns })
   )
-  const makeDeltac = (key, state) => m.combine(
+}
+
+function makeDeltac (key, state) {
+  return m.combine(
     (key, state) => r$s => m.mergeArray(r$s).map(r => s =>
       updateState(s, key, r(typeof s[key] === 'undefined' ? state : s[key]))
     ),
     $(key),
     $(state)
   )
-  const chainRing = (key, pith) => m.combine((key, pith) =>
+}
+
+function chainRing (key, pith) {
+  return m.combine((key, pith) =>
     function chainPith (node, leaf) {
       pith(
         (key, state, pith) => node(
@@ -52,7 +61,9 @@ function createS$ (state$) {
     $(key),
     $(pith)
   )
+}
 
+function createS$ (state$) {
   return (key, state, pith) => ATree$(
     makeDeltac(key, state),
     chainRing(key, apiRing(state$, pith))

@@ -21,7 +21,7 @@ const patch = require('snabbdom').init([
   actionModule
 ])
 
-s$('root', {}, s => {
+s$('root', s => {
   s(
     'vnode$',
     h$('div#root-node', {}, Folder(pathJoin(__dirname, '..'), s))

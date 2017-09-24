@@ -1,13 +1,25 @@
-const m = require('most')
+// const m = require('most')
 const css$ = require('./css$')
-const mount = require('./mount')
+
+const {async: subject} = require('most-subject')
+const action$ = subject()
+const toVnode = require('snabbdom/tovnode').default
+const actionModule = require('../lib/drivers/snabbdom/actionModule')(function (event) {
+  action$.next({ vnode: this, action: this.data.on[event.type], event })
+})
+const patch = require('snabbdom').init([
+  ...['class', 'props', 'style', 'attributes'].map(name => require('snabbdom/modules/' + name).default),
+  actionModule
+])
+const h$ = require('./create-h$')(action$)
+
 const animationFrame$ = require('./animation-frame').take(1500)
-const cycle$ = animationFrame$.scan(i => i >= Math.PI * 2 ? 0 : i + (0.15), 0)
+const cycle$ = animationFrame$.scan(i => i >= Math.PI * 2 ? 0 : i + (0.3), 0)
 const sin$ = cycle$.map(i => Math.sin(i))
 const cos$ = cycle$.map(i => Math.cos(i))
 
-const elm = document.getElementById('root-node')
-mount(elm, Counter(3))
+h$('div#root-node', {}, Counter(3))
+  .reduce(patch, toVnode(document.getElementById('root-node')))
 
 function Counter (d = 1) { // eslint-disable-line
   return h => {

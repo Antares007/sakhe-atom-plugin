@@ -1,13 +1,13 @@
 const m = require('most')
 const $ = require('./$')
-const ATree$ = require('./atree$')
+const ATree = require('./atree')
 const {h} = require('snabbdom')
 const {Cons, nil} = require('./list')
 
 module.exports = createH$
 
 function apiRing (action$, pith) {
-  return $(pith).map(pith => function (node, leaf, path) {
+  return $(pith).map(pith => function apiPith (node, leaf, path) {
     const h = (...args) => (
       args.length === 3
       ? node($(args[0]), $(args[1]), apiRing(action$, args[2]))
@@ -15,7 +15,7 @@ function apiRing (action$, pith) {
       ? node($(args[0]), $({}), apiRing(action$, args[1]))
       : args.length === 1
       ? leaf($(args[0]))
-      : leaf($(`h arguments error [${JSON.stringify(args)}]`))
+      : leaf($(`h arguments error ${JSON.stringify(args)}`))
     )
     h.path = path
     h.$ = action$
@@ -26,7 +26,7 @@ function apiRing (action$, pith) {
 }
 
 function pathRing (path, pith) {
-  return $(pith).map(pith => function (node, leaf) {
+  return $(pith).map(pith => function pathPith (node, leaf) {
     var i = 0
     pith(
       (sel, data, pith) => {
@@ -44,26 +44,22 @@ function pathRing (path, pith) {
   })
 }
 
-function makeDeltac (sel, data) {
-  return m.combine(
-    (s, d) => vnode$s => m.combineArray((...chlds) => h(s, d, chlds), vnode$s),
-    $(sel),
-    $(data)
-  )
+function chainRing (pith) {
+  return function chainPith (node, leaf) {
+    pith(
+      (sel, data, pith) => leaf(bark(sel, data, pith)),
+      a => leaf($(a))
+    )
+  }
 }
 
-function chainRing (pith) {
-  return $(pith).map(pith => function (node, leaf) {
-    pith(
-      (sel, data, pith) => node(makeDeltac(sel, data), chainRing(pith)),
-      x => leaf($(x))
-    )
-  })
+function bark (sel, data, pith) {
+  return $(pith).map(pith => ATree(
+    vnode$s => m.combine((s, d, ...chlds) => h(s, d, chlds), $(sel), $(data), ...vnode$s),
+    chainRing(pith)
+  )).switchLatest()
 }
 
 function createH$ (action$, path = nil) {
-  return (sel, data, pith) => ATree$(
-    makeDeltac(sel, data),
-    chainRing(pathRing(path, apiRing(action$, pith)))
-  )
+  return (sel, data, pith) => bark(sel, data, pathRing(path, apiRing(action$, pith)))
 }

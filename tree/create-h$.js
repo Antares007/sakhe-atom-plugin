@@ -55,11 +55,15 @@ function chainRing (pith) {
 
 function bark (sel, data, pith) {
   return $(pith).map(pith => ATree(
-    vnode$s => m.combine((s, d, ...chlds) => h(s, d, chlds), $(sel), $(data), ...vnode$s),
+    vnode$s => m.combine(
+      (s, d, ...chlds) => h(s, d, chlds), $(sel), $(data), ...vnode$s
+    ),
     chainRing(pith)
   )).switchLatest()
 }
 
 function createH$ (action$, path = nil) {
-  return (sel, data, pith) => bark(sel, data, pathRing(path, apiRing(action$, pith)))
+  return (sel, data, pith) => bark(
+    sel, data, pathRing(path, apiRing(action$, pith))
+  )
 }

@@ -1,6 +1,6 @@
 const $ = require('./$')
 const m = require('most')
-const ATree$ = require('./atree$')
+const ATree = require('./atree')
 
 module.exports = createS$
 
@@ -8,14 +8,10 @@ function apiRing (state$, pith) {
   return $(pith).map(pith =>
     function apiPith (node, leaf, key) {
       const thisState$ = state$.map(s => s[key]).filter(Boolean)
-      const s = (...args) => {
-        args.length === 3
-        ? node(args[0], args[1], apiRing(thisState$, args[2]))
-        : args.length === 2
-        ? leaf(...args)
-        : leaf('arguments error', $(s => args))
-      }
-      s.$ = thisState$.skipRepeats()
+      const s = (key, r) => leaf(key, $(r))
+      s.o = (key, pith) => node(key, {}, apiRing(thisState$, pith))
+      s.a = (key, pith) => node(key, [], apiRing(thisState$, pith))
+      s.$ = thisState$.skipRepeats().multicast()
       pith(s)
     }
   )
@@ -32,63 +28,48 @@ function updateState (s, key, ns) {
   )
 }
 
-function makeDeltac (key, state) {
-  return m.combine(
-    (key, state) => r$s => m.mergeArray(r$s).map(r => s =>
-      updateState(s, key, r(typeof s[key] === 'undefined' ? state : s[key]))
-    ),
-    $(key),
-    $(state)
-  )
+function chainRing (key, pith) {
+  return function chainPith (node, leaf) {
+    pith(
+      (key, state, pith) => leaf(bark(key, state, pith)),
+      (key, r) => leaf($(r).map(r => s => updateState(s, key, r(s[key])))),
+      key
+    )
+  }
 }
 
-function chainRing (key, pith) {
-  return m.combine((key, pith) =>
-    function chainPith (node, leaf) {
-      pith(
-        (key, state, pith) => node(
-          makeDeltac(key, state),
-          chainRing(key, pith)
-        ),
-        (key, reducer) => leaf(m.combine(
-          (key, r) => s => updateState(s, key, r(s[key])),
-          $(key),
-          $(reducer)
-        )),
-        key
-      )
-    },
-    $(key),
-    $(pith)
-  )
+function bark (key, state, pith) {
+  return $(pith).map(pith => ATree(
+    r$s => m.mergeArray(r$s).map(r => s =>
+      updateState(s, key, r(typeof s[key] === 'undefined' ? state : s[key])
+    )),
+    chainRing(key, pith)
+  )).switchLatest()
 }
 
 function createS$ (state$) {
-  return (key, state, pith) => ATree$(
-    makeDeltac(key, state),
-    chainRing(key, apiRing(state$, pith))
-  )
+  return (key, pith) => bark(key, {}, apiRing(state$, pith))
 }
 
 if (require.main === module) {
   const debug = key => x => console.log(key, x)
   const {async: subject} = require('most-subject')
   const state$ = subject()
-  const s = createS$(state$)
-  s('a', {}, s => {
+  const s$ = createS$(state$)
+  s$('a', s => {
     s.$.observe(debug('a'))
-    s('b', m.of(s => {
-      s = s + 1
+    s('b', m.periodic(1000).scan(a => a + 1, 0).map(i => s => {
+      s = s + i
       return s
     }))
-    s('c', [], s => {
+    s.a('c', s => {
       // s.$.observe(debug('c'))
-      s(m.periodic(1000).scan(a => a + 1, 0), s => 42)
+      s(2, s => 42)
     })
   })
   .scan((s, r) => r(s), { a: { b: 41 } })
   .tap(s => state$.next(s))
   .tap(debug('====='))
-  .take(5)
+  .take(10)
   .drain()
 }

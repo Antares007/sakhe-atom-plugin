@@ -9,9 +9,9 @@ const watch$ = require('./watch$')
 const toVnode = require('snabbdom/tovnode').default
 
 const action$ = subject()
-const h = require('./create-h$')(action$)
+const h$ = require('./create-h$')(action$)
 const state$ = subject()
-const s = require('./create-s$')(state$)
+const s$ = require('./create-s$')(state$)
 
 const actionModule = require('../lib/drivers/snabbdom/actionModule')(function (event) {
   action$.next({ vnode: this, action: this.data.on[event.type], event })
@@ -21,10 +21,11 @@ const patch = require('snabbdom').init([
   actionModule
 ])
 
-s('root', {}, s => {
+s$('root', {}, s => {
   s(
     'vnode$',
-    h('div#root-node', {}, Folder(pathJoin(__dirname, '..'))).map(vnode => () => vnode)
+    h$('div#root-node', {}, Folder(pathJoin(__dirname, '..'), s))
+      .map(vnode => () => vnode)
   )
 })
   .scan((s, r) => r(s), {})
@@ -33,7 +34,7 @@ s('root', {}, s => {
   .map(s => s.vnode$).filter(Boolean)
   .reduce(patch, toVnode(document.getElementById('root-node')))
 
-function Folder (path) {
+function Folder (path, s) {
   return h => {
     h(
       'ul',

@@ -37,8 +37,8 @@ function Counter (d = 1) { // eslint-disable-line
         style: css$`
           position: relative; outline: none
           border-radius: ${sin$.map(i => Math.abs(Math.floor(i * 20)))}px
-          left: ${cos$.map(i => Math.floor(r * i))}px
-          top: ${sin$.map(i => Math.floor(r * i))}px
+          // left: ${cos$.map(i => Math.floor(r * i))}px
+          // top: ${sin$.map(i => Math.floor(r * i))}px
           backgroundColor: rgb(255, ${color$(sin$)}, ${color$(cos$)})
         `
       }, h => {
@@ -50,8 +50,8 @@ function Counter (d = 1) { // eslint-disable-line
         style: css$`
           position: relative; outline: none
           border-radius: ${cos$.map(i => Math.abs(Math.floor(i * 20)))}px
-          left: ${sin$.map(i => Math.floor(r * i))}px
-          top: ${cos$.map(i => Math.floor(r * i))}px
+          // left: ${sin$.map(i => Math.floor(r * i))}px
+          // top: ${cos$.map(i => Math.floor(r * i))}px
           backgroundColor: rgb(${color$(sin$)}, ${color$(cos$)}, 255)
         `
       }, h => {
@@ -66,7 +66,7 @@ function Counter (d = 1) { // eslint-disable-line
 function showHideRing (pith) {
   return function showHidePith (h) {
     const showHide$ = h.$.filter(({action}) => action === showHide$)
-      .scan(b => !b, true).multicast()
+      .scan(b => !b, false).multicast()
     h(
       'button',
       {on: {click: showHide$}},

@@ -13,9 +13,10 @@
     "start": "electron ."
   },
   "dependencies": {
-    "debug": "^2.6.8",
-    "most": "^1.7.1",
+    "debug": "^3.1.0",
+    "most": "^1.7.2",
+    "most-proxy": "^3.3.0",
     "most-subject": "^5.3.0",
-    "snabbdom": "^0.6.9"
+    "snabbdom": "^0.7.0"
   }
 }

@@ -1,4 +1,5 @@
 const debug = require('debug') // eslint-disable-line
+// const $ = require('./$')
 const css$ = require('./css$')
 const m = require('most')
 const {async: subject} = require('most-subject')
@@ -21,17 +22,31 @@ const patch = require('snabbdom').init([
   actionModule
 ])
 
-s$('root', s => {
+s$('root', function statePith (s) {
   s(
     'vnode$',
-    h$('div#root-node', {}, Folder(pathJoin(__dirname, '..'), s))
-      .map(vnode => () => vnode)
+    h$('div#root-node', function vnodePith (h) {
+      s('root-node', s => 1)
+      s.o('a', s => {
+        h('button.a', h => {
+          s('a', s => 2)
+          h('a')
+          s.o('b', s => {
+            h('button.b', h => {
+              s('b', s => 3)
+              h('b')
+            })
+          })
+        })
+      })
+    }).map(vnode => () => vnode)
   )
-})
-  .scan((s, r) => r(s), {})
+  s('vnode2$', h$('div#root-node', Folder(pathJoin(__dirname, '../..'))).map(vnode => () => vnode))
+}).scan((s, r) => r(s), {})
+  .tap(console.info.bind(console))
   .tap(s => state$.next(s))
   .map(s => s.root).filter(Boolean)
-  .map(s => s.vnode$).filter(Boolean)
+  .map(s => s.vnode2$).filter(Boolean)
   .reduce(patch, toVnode(document.getElementById('root-node')))
 
 function Folder (path, s) {

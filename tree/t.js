@@ -1,17 +1,13 @@
-const mount = require('./mount')
-const m = require('most')
+const {async: subject} = require('most-subject')
+const action$ = subject()
+const h$ = require('./create-h$')(action$)
+const state$ = subject()
+const s$ = require('./create-s$')(state$)
+const sh$ = require('./create-sh$')(s$, h$)
 
-mount(document.getElementById('root-node'), Root())
-function Root () {
-  return h => {
-    h('ul', m.periodic(1000).take(1).map(() => Test()))
-  }
-}
-function Test () {
-  return h => {
-    h('li', h => h(0))
-    h('li', m.of(h => h(1)))
-    h('li', m.periodic(3000).skip(1).take(1).map(() => Root()).startWith(h => h('...')))
-    h('li', h => h(2))
-  }
-}
+sh$('div', {}, (n, l) => {
+  l('hello')
+})
+.scan((s, r) => r(s), {})
+.tap(x => console.log(JSON.stringify(x)))
+.drain()

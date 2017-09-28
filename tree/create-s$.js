@@ -56,16 +56,11 @@ if (require.main === module) {
   const {async: subject} = require('most-subject')
   const state$ = subject()
   const s$ = createS$(state$)
-  s$('a', s => {
-    s.$.observe(debug('a'))
-    s('b', m.periodic(1000).scan(a => a + 1, 0).map(i => s => {
-      s = s + i
-      return s
-    }))
-    s.a('c', s => {
-      // s.$.observe(debug('c'))
-      s(2, s => 42)
-    })
+  s$(r => {
+    r(s$(r => {
+      r(s => {})
+    }).map(r => s => updateState(s, 'key', r(s))))
+    r(s => {})
   })
   .scan((s, r) => r(s), { a: { b: 41 } })
   .tap(s => state$.next(s))

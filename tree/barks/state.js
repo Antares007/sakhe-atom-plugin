@@ -1,9 +1,10 @@
 const m = require('most')
 const $ = require('../$')
 const Bark = require('./bark')
+const {async: subject} = require('most-subject')
 const id = a => a
 
-module.exports = { ArrayBark, ObjectBark }
+module.exports = { ArrayBark, ObjectBark, ReducerBark }
 
 function CollectionBark (pith, pmap = id, cmap = id) {
   return Bark(
@@ -53,17 +54,47 @@ function ObjectBark (pith, pmap = id) {
   )
 }
 
+function ReducerBark (pith, initState) {
+  const state$ = subject()
+  return ObjectBark(pith, pith => keyRing(state$, apiRing(pith)))
+    .scan((s, r) => r(s), initState)
+    .skip(initState ? 0 : 1)
+    .tap(state$.next.bind(state$))
+}
+
+function apiRing (pith) {
+  return (obj, arr, val, state$) => {
+    const r = (key, v) => val(key, v)
+    r.o = (key, pith, pmap = id) => obj(key, pith, path => apiRing(pmap(path)))
+    r.a = (key, pith, pmap = id) => arr(key, pith, path => apiRing(pmap(path)))
+    r.$ = state$
+    pith(r)
+  }
+}
+
+function keyRing (state$, pith) {
+  const select = key => state$.flatMap(
+    s => $(key).map(key => s[key]).filter(Boolean)
+  )
+  return (obj, arr, val) => pith(
+    (key, pith, pmap = id) => obj(key, pith, path => keyRing(select(key), pmap(path))),
+    (key, pith, pmap = id) => arr(key, pith, path => keyRing(select(key), pmap(path))),
+    val,
+    state$.skipRepeats().multicast()
+  )
+}
+
 if (require.main === module) {
   const util = require('util')
-  const debug = key => x => console.log(util.inspect(x, {depth: 20}))
+  const debug = key => x => console.log(key, util.inspect(x, {depth: 20}))
 
-  ObjectBark((o, a, v) => {
-    a('myArray', (o, a, v) => {
-      v(2, s => s + 1)
+  ReducerBark(r => {
+    r.a('myArray', r => {
+      r.$.observe(console.log.bind(console))
+      r(0, s => 42)
     })
-    v('a', s => s + 1)
+    r('a', s => 41)
   })
-  .scan((s, r) => r(s), { a: 1, myArray: [ 1, 2, 2, 4 ] })
   .tap(debug('====='))
   .take(10)
   .drain()

@@ -1,7 +1,7 @@
 const m = require('most')
 const {h} = require('snabbdom')
-const $ = require('./$')
-const {Cons, nil} = require('./list')
+const $ = require('../$')
+const {Cons, nil} = require('../list')
 const Bark = require('./bark')
 const id = a => a
 

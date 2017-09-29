@@ -11,7 +11,7 @@ const patch = require('snabbdom').init([
   ...['class', 'props', 'style', 'attributes'].map(name => require('snabbdom/modules/' + name).default),
   actionModule
 ])
-const h$ = require('./create-h$')
+const h$ = require('./barks/h$')
 
 const animationFrame$ = require('./animation-frame').take(1500)
 const cycle$ = animationFrame$.scan(i => i >= Math.PI * 2 ? 0 : i + (0.15), 0)

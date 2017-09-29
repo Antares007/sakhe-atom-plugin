@@ -1,42 +1,32 @@
 const m = require('most')
 const $ = require('./$')
-const ATree = require('./atree')
 const {Cons, nil} = require('./list')
+const Bark = require('./bark')
 const id = a => a
-
-function combineBark (pith, fmap = id) {
-  const run = (pith) => ATree(
-    a$s => m.combineArray((...as) => as, a$s),
-    (_, l) => fmap(pith)(a => l($(a)))
-  )
-  return (
-    typeof pith === 'function'
-    ? run(pith)
-    : pith instanceof m.Stream
-    ? pith.map(run).switchLatest()
-    : m.throwError(new Error('invalid pith'))
-  )
-}
 
 const TextElement = (text) => $(text).map(text => {
   if (typeof text !== 'string') throw new Error('invalid text')
   return { text }
 })
 
-const Element = (sel, data, pith, fmap = id) => combineBark(pith, pith => c => {
-  c($(sel).map(sel => {
-    if (typeof sel !== 'string') throw new Error('invalid selector')
-    return sel
-  }))
-  c($(data).map(data => {
-    if (typeof data !== 'object' || data === null) throw new Error('invalid data')
-    return data
-  }))
-  fmap(pith)(
-    (sel, data, pith, fmap = id) => c(Element(sel, data, pith, fmap)),
-    text => c(TextElement(text))
-  )
-}).map(([sel, data, ...children]) => ({sel, data, children}))
+const Element = (sel, data, pith, fmap = id) => Bark(
+  a$s => m.combineArray((...as) => as, a$s),
+  pith,
+  pith => c => {
+    c($(sel).map(sel => {
+      if (typeof sel !== 'string') throw new Error('invalid selector')
+      return sel
+    }))
+    c($(data).map(data => {
+      if (typeof data !== 'object' || data === null) throw new Error('invalid data')
+      return data
+    }))
+    fmap(pith)(
+      (sel, data, pith, fmap = id) => c(Element(sel, data, pith, fmap)),
+      text => c(TextElement(text))
+    )
+  }).map(([sel, data, ...children]) => ({sel, data, children})
+)
 
 module.exports = (sel, data, pith, fmap = id, path = nil) =>
   Element(sel, data && pith ? data : {}, pith || data, p => keyRing(pathRing(path, apiRing(fmap(p)))))

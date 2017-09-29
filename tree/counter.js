@@ -1,5 +1,6 @@
 // const m = require('most')
 const css$ = require('./css$')
+const {h} = require('snabbdom')
 
 const {async: subject} = require('most-subject')
 const action$ = subject()
@@ -30,9 +31,11 @@ h$('div#root-node', {}, h => {
     h.$ = action$.filter(x => x.vnode.data.path.endsWith(h.path))
     pith(h)
   }
-})
+},
+  dc => a$s => dc(a$s).map(([sel, data, ...children]) => ({sel, key: data.key, data, children}))
+)
   .scan(patch, toVnode(document.getElementById('root-node')))
-  .throttle(1000)
+  .throttle(100)
   .tap(console.log.bind(console))
   .drain()
 

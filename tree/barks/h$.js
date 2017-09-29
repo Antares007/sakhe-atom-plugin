@@ -1,5 +1,4 @@
 const m = require('most')
-const {h} = require('snabbdom')
 const $ = require('../$')
 const {Cons, nil} = require('../list')
 const Bark = require('./bark')
@@ -10,9 +9,8 @@ const TextElement = (text) => $(text).map(text => {
   return { text }
 })
 
-const Element = (sel, data, pith, fmap = id) => Bark(
-  a$s => m.combineArray((...as) => as, a$s)
-    .map(([sel, data, ...children]) => h(sel, data, children)),
+const Element = (sel, data, pith, pmap = id, cmap = id) => Bark(
+  cmap(a$s => m.combineArray((...as) => as, a$s)),
   pith,
   pith => c => {
     c($(sel).map(sel => {
@@ -23,28 +21,28 @@ const Element = (sel, data, pith, fmap = id) => Bark(
       if (typeof data !== 'object' || data === null) throw new Error('invalid data')
       return data
     }))
-    fmap(pith)(
-      (sel, data, pith, fmap = id) => c(Element(sel, data, pith, fmap)),
+    pmap(pith)(
+      (sel, data, pith, pmap = id) => c(Element(sel, data, pith, pmap, cmap)),
       text => c(TextElement(text))
     )
   }
 )
 
-module.exports = (sel, data, pith, fmap = id, path = nil) =>
-  Element(sel, data && pith ? data : {}, pith || data, p => pathRing(path, apiRing(fmap(p))))
+module.exports = (sel, data, pith, fmap = id, cmap = id, path = nil) =>
+  Element(sel, data && pith ? data : {}, pith || data, p => pathRing(path, apiRing(fmap(p))), cmap)
 
 function pathRing (path, pith) {
   return function pathPith (elm, txt) {
     var i = 0
     pith(
-      (sel, data, pith, fmap = id) => {
+      (sel, data, pith, pmap = id) => {
         const key = i++
         const thisPath = Cons(key, path)
         elm(
           sel,
           $(data).map(data => Object.assign({path: thisPath, key}, data)),
           pith,
-          pith => pathRing(thisPath, fmap(pith))
+          pith => pathRing(thisPath, pmap(pith))
         )
       },
       txt,
@@ -55,10 +53,10 @@ function pathRing (path, pith) {
 
 function apiRing (pith) {
   return (elm, txt, path) => {
-    const h = (sel, data, pith, fmap = id) => (
+    const h = (sel, data, pith, pmap = id) => (
         !data && !pith
         ? txt($(sel).map(text => typeof text === 'string' ? text : JSON.stringify(text)))
-        : elm(sel, data && pith ? data : {}, pith || data, pith => apiRing(fmap(pith)))
+        : elm(sel, data && pith ? data : {}, pith || data, pith => apiRing(pmap(pith)))
       )
     h.path = path
     pith(h)

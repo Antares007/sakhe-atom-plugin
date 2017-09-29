@@ -1,4 +1,5 @@
 const m = require('most')
+const {h} = require('snabbdom')
 const $ = require('./$')
 const {Cons, nil} = require('./list')
 const Bark = require('./bark')
@@ -10,7 +11,8 @@ const TextElement = (text) => $(text).map(text => {
 })
 
 const Element = (sel, data, pith, fmap = id) => Bark(
-  a$s => m.combineArray((...as) => as, a$s),
+  a$s => m.combineArray((...as) => as, a$s)
+    .map(([sel, data, ...children]) => h(sel, data, children)),
   pith,
   pith => c => {
     c($(sel).map(sel => {
@@ -25,7 +27,7 @@ const Element = (sel, data, pith, fmap = id) => Bark(
       (sel, data, pith, fmap = id) => c(Element(sel, data, pith, fmap)),
       text => c(TextElement(text))
     )
-  }).map(([sel, data, ...children]) => ({sel, data, children})
+  }
 )
 
 module.exports = (sel, data, pith, fmap = id, path = nil) =>

@@ -1,41 +1,28 @@
 // const m = require('most')
 const css$ = require('./css$')
-const {h} = require('snabbdom')
-
-const {async: subject} = require('most-subject')
-const action$ = subject()
-const toVnode = require('snabbdom/tovnode').default
-const actionModule = require('../lib/drivers/snabbdom/actionModule')(function (event) {
-  action$.next({ vnode: this, action: this.data.on[event.type], event })
-})
-const patch = require('snabbdom').init([
-  ...['class', 'props', 'style', 'attributes'].map(name => require('snabbdom/modules/' + name).default),
-  actionModule
-])
-const h$ = require('./barks/h$')
-
-const animationFrame$ = require('./animation-frame').take(1500)
+const animationFrame$ = require('./animation-frame').take(1)
 const cycle$ = animationFrame$.scan(i => i >= Math.PI * 2 ? 0 : i + (0.15), 0)
 const sin$ = cycle$.map(i => Math.sin(i))
 const cos$ = cycle$.map(i => Math.cos(i))
+const MountBark = require('./barks/mount')
 
-h$('div#root-node', {}, h => {
-  h('div', showHideRing(Counter(0)))
-  h('div', showHideRing(Counter(1)))
-  h('div', showHideRing(Counter(2)))
-  h('div', showHideRing(Counter(3)))
-}, function map (pith) {
-  return oh => {
-    const h = (sel, data, pith, fmap = a => a) => oh(sel, data, pith, pith => map(fmap(pith)))
-    h.path = oh.path
-    h.$ = action$.filter(x => x.vnode.data.path.endsWith(h.path))
-    pith(h)
-  }
-},
-  dc => a$s => dc(a$s).map(([sel, data, ...children]) => ({sel, key: data.key, data, children}))
-)
-  .scan(patch, toVnode(document.getElementById('root-node')))
-  .throttle(100)
+MountBark(function (r, m) {
+  r.a('list', r => {
+    r(0, s => 42)
+    r.a(1, r => {
+      r(0, s => 42)
+    })
+  })
+  r.a('list', r => {
+    r(2, s => 42)
+  })
+  m(document.getElementById('root-node'), h => {
+    h('div', showHideRing(Counter(0)))
+    h('div', showHideRing(Counter(1)))
+    h('div', showHideRing(Counter(2)))
+    h('div', showHideRing(Counter(3)))
+  })
+}).throttle(1000)
   .tap(console.log.bind(console))
   .drain()
 

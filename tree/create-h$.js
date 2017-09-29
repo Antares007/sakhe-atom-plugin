@@ -1,69 +1,87 @@
 const m = require('most')
 const $ = require('./$')
 const ATree = require('./atree')
-const {h} = require('snabbdom')
 const {Cons, nil} = require('./list')
+const id = a => a
 
-module.exports = createH$
-
-function apiRing (action$, pith) {
-  return $(pith).map(pith => function apiPith (node, leaf, path) {
-    const h = (...args) => (
-      args.length === 3
-      ? node($(args[0]), $(args[1]), apiRing(action$, args[2]))
-      : args.length === 2
-      ? node($(args[0]), $({}), apiRing(action$, args[1]))
-      : args.length === 1
-      ? leaf($(args[0]))
-      : leaf($(`h arguments error ${JSON.stringify(args)}`))
-    )
-    h.path = path
-    h.$ = action$
-      .filter(x => x.vnode.data.path.endsWith(path))
-      .multicast()
-    pith(h)
-  })
+function combineBark (pith, fmap = id) {
+  const run = (pith) => ATree(
+    a$s => m.combineArray((...as) => as, a$s),
+    (_, l) => fmap(pith)(a => l($(a)))
+  )
+  return (
+    typeof pith === 'function'
+    ? run(pith)
+    : pith instanceof m.Stream
+    ? pith.map(run).switchLatest()
+    : m.throwError(new Error('invalid pith'))
+  )
 }
 
-function pathRing (path, pith) {
-  return $(pith).map(pith => function pathPith (node, leaf) {
+const TextElement = (text) => $(text).map(text => {
+  if (typeof text !== 'string') throw new Error('invalid text')
+  return { text }
+})
+
+const Element = (sel, data, pith, fmap = id) => combineBark(pith, pith => c => {
+  c($(sel).map(sel => {
+    if (typeof sel !== 'string') throw new Error('invalid selector')
+    return sel
+  }))
+  c($(data).map(data => {
+    if (typeof data !== 'object' || data === null) throw new Error('invalid data')
+    return data
+  }))
+  fmap(pith)(
+    (sel, data, pith, fmap = id) => c(Element(sel, data, pith, fmap)),
+    text => c(TextElement(text))
+  )
+}).map(([sel, data, ...children]) => ({sel, data, children}))
+
+module.exports = (sel, data, pith, fmap = id, path = nil) =>
+  Element(sel, data && pith ? data : {}, pith || data, p => keyRing(pathRing(path, apiRing(fmap(p)))))
+
+function keyRing (pith) {
+  return (elm, txt) => {
     var i = 0
     pith(
-      (sel, data, pith) => {
-        const key = i++
-        const thisPath = Cons(key, path)
-        node(
-          sel,
-          $(data).map(data => Object.assign({path: thisPath, key}, data)),
-          pathRing(thisPath, pith)
-        )
+      (sel, data, pith, fmap = id) => {
+        const index = i++
+        elm(sel, $(data).map(data => Object.assign({key: index}, data)), pith, pith => keyRing(fmap(pith)))
       },
-      leaf,
-      path
-    )
-  })
-}
-
-function chainRing (pith) {
-  return function chainPith (node, leaf) {
-    pith(
-      (sel, data, pith) => leaf(bark(sel, data, pith)),
-      a => leaf($(a))
+      txt
     )
   }
 }
 
-function bark (sel, data, pith) {
-  return $(pith).map(pith => ATree(
-    vnode$s => m.combine(
-      (s, d, ...chlds) => h(s, d, chlds), $(sel), $(data), ...vnode$s
-    ),
-    chainRing(pith)
-  )).switchLatest()
+function pathRing (path, pith) {
+  return function pathPith (elm, txt) {
+    var i = 0
+    pith(
+      (sel, data, pith, fmap = id) => {
+        const key = i++
+        const thisPath = Cons(key, path)
+        elm(
+          sel,
+          $(data).map(data => Object.assign({path: thisPath, key}, data)),
+          pith,
+          pith => pathRing(thisPath, fmap(pith))
+        )
+      },
+      txt,
+      path
+    )
+  }
 }
 
-function createH$ (action$, path = nil) {
-  return (sel, data, pith) => bark(
-    sel, data && pith ? data : {}, pathRing(path, apiRing(action$, pith || data))
-  )
+function apiRing (pith) {
+  return (elm, txt, path) => {
+    const h = (sel, data, pith, fmap = id) => (
+        !data && !pith
+        ? txt($(sel).map(text => typeof text === 'string' ? text : JSON.stringify(text)))
+        : elm(sel, data && pith ? data : {}, pith || data, pith => apiRing(fmap(pith)))
+      )
+    h.path = path
+    pith(h)
+  }
 }

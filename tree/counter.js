@@ -11,18 +11,25 @@ const patch = require('snabbdom').init([
   ...['class', 'props', 'style', 'attributes'].map(name => require('snabbdom/modules/' + name).default),
   actionModule
 ])
-const h$ = require('./create-h$')(action$)
+const h$ = require('./create-h$')
 
 const animationFrame$ = require('./animation-frame').take(1500)
 const cycle$ = animationFrame$.scan(i => i >= Math.PI * 2 ? 0 : i + (0.15), 0)
 const sin$ = cycle$.map(i => Math.sin(i))
 const cos$ = cycle$.map(i => Math.cos(i))
 
-h$('div#root-node', h => {
+h$('div#root-node', {}, h => {
   h('div', showHideRing(Counter(0)))
   h('div', showHideRing(Counter(1)))
   h('div', showHideRing(Counter(2)))
   h('div', showHideRing(Counter(3)))
+}, function map (pith) {
+  return oh => {
+    const h = (sel, data, pith, fmap = a => a) => oh(sel, data, pith, pith => map(fmap(pith)))
+    h.path = oh.path
+    h.$ = action$.filter(x => x.vnode.data.path.endsWith(h.path))
+    pith(h)
+  }
 })
   .reduce(patch, toVnode(document.getElementById('root-node')))
 

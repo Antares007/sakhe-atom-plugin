@@ -31,7 +31,10 @@ h$('div#root-node', {}, h => {
     pith(h)
   }
 })
-  .reduce(patch, toVnode(document.getElementById('root-node')))
+  .scan(patch, toVnode(document.getElementById('root-node')))
+  .throttle(1000)
+  .tap(console.log.bind(console))
+  .drain()
 
 function Counter (d = 1) { // eslint-disable-line
   return h => {

@@ -1,6 +1,6 @@
 const m = require('most')
-const ATree = require('./atree')
-const $ = require('./$')
+const ATree = require('../atree')
+const $ = require('../$')
 
 module.exports = Bark
 

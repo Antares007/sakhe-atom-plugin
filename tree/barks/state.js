@@ -1,5 +1,5 @@
 const m = require('most')
-const $ = require('./$')
+const $ = require('../$')
 const Bark = require('./bark')
 const id = a => a
 

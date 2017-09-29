@@ -29,20 +29,7 @@ const Element = (sel, data, pith, fmap = id) => Bark(
 )
 
 module.exports = (sel, data, pith, fmap = id, path = nil) =>
-  Element(sel, data && pith ? data : {}, pith || data, p => keyRing(pathRing(path, apiRing(fmap(p)))))
-
-function keyRing (pith) {
-  return (elm, txt) => {
-    var i = 0
-    pith(
-      (sel, data, pith, fmap = id) => {
-        const index = i++
-        elm(sel, $(data).map(data => Object.assign({key: index}, data)), pith, pith => keyRing(fmap(pith)))
-      },
-      txt
-    )
-  }
-}
+  Element(sel, data && pith ? data : {}, pith || data, p => pathRing(path, apiRing(fmap(p))))
 
 function pathRing (path, pith) {
   return function pathPith (elm, txt) {

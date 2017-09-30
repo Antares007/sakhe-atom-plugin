@@ -50,13 +50,14 @@ function ObjectBark (pith, pmap = id) {
       (key, pith, pmap = id) => a(mkChain(key), pith, pmap),
       (key, r) => v(mkChain(key), r)
     ),
-    dc => r$s => dc(r$s).map(r => s => typeof s === 'object' && s !== null ? r(s) : r({}))
+    dc => r$s =>
+      dc(r$s).map(r => s => typeof s === 'object' && s !== null ? r(s) : r({}))
   )
 }
 
 function ReducerBark (pith, initState) {
   const state$ = subject()
-  return ObjectBark(pith, pith => keyRing(state$, apiRing(pith)))
+  return ObjectBark(pith, pith => stateRing(state$, apiRing(pith)))
     .scan((s, r) => r(s), initState)
     .skip(initState ? 0 : 1)
     .tap(state$.next.bind(state$))
@@ -72,13 +73,12 @@ function apiRing (pith) {
   }
 }
 
-function keyRing (state$, pith) {
-  const select = key => state$.flatMap(
-    s => $(key).map(key => s[key]).filter(Boolean)
-  )
+function stateRing (state$, pith) {
+  const select = key =>
+    state$.chain(s => $(key).map(key => s[key]).filter(Boolean))
   return (obj, arr, val) => pith(
-    (key, pith, pmap = id) => obj(key, pith, path => keyRing(select(key), pmap(path))),
-    (key, pith, pmap = id) => arr(key, pith, path => keyRing(select(key), pmap(path))),
+    (k, p, f = id) => obj(k, p, path => stateRing(select(k), f(path))),
+    (k, p, f = id) => arr(k, p, path => stateRing(select(k), f(path))),
     val,
     state$.skipRepeats().multicast()
   )
@@ -91,9 +91,15 @@ if (require.main === module) {
   ReducerBark(r => {
     r.a('myArray', r => {
       r.$.observe(console.log.bind(console))
-      r(0, s => 42)
     })
     r('a', s => 41)
+    r.a('myArray', r => {
+      r(1, s => 41)
+    })
+    r.a('myArray', r => {
+      r(0, s => 41)
+      r(1, s => s + 1)
+    })
   })
   .tap(debug('====='))
   .take(10)

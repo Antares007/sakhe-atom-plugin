@@ -4,7 +4,7 @@ const animationFrame$ = require('./animation-frame').take(1)
 const cycle$ = animationFrame$.scan(i => i >= Math.PI * 2 ? 0 : i + (0.15), 0)
 const sin$ = cycle$.map(i => Math.sin(i))
 const cos$ = cycle$.map(i => Math.cos(i))
-const MountBark = require('./barks/mount')
+const MountBark = require('../barks/mount')
 
 MountBark(function (r, m) {
   r.a('list', r => {

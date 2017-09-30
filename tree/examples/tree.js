@@ -1,11 +1,15 @@
 const m = require('most')
-const mount = require('./mount')
 const animationFrame$ = require('./animation-frame').take(1500)
 const cycle$ = animationFrame$.scan(i => i >= Math.PI * 2 ? 0 : i + (0.05), 0)
 const sin$ = cycle$.map(i => Math.sin(i))
+const MountBark = require('../barks/mount')
 
-const elm = document.getElementById('root-node')
-mount(elm, Tree(2, 2))
+MountBark(function (r, m) {
+  m(document.getElementById('root-node'), Tree(2, 2))
+  m(document.getElementById('root-node'), Tree(2, 3))
+}).throttle(1000)
+  .tap(console.log.bind(console))
+  .drain()
 
 function Tree (d = 1, w = 3) {
   return (h) => {

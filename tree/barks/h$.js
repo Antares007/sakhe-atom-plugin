@@ -3,62 +3,105 @@ const $ = require('../$')
 const {Cons, nil} = require('../list')
 const Bark = require('./bark')
 const id = a => a
+const compose = (...fns) => fns.reduce((f, g) => (...args) => f(g(...args)))
 
-const TextElement = (text) => $(text).map(text => {
-  if (typeof text !== 'string') throw new Error('invalid text')
-  return { text }
-})
+class VNode {}
 
-const Element = (sel, data, pith, pmap = id, cmap = id) => Bark(
-  cmap(a$s => m.combineArray((...as) => as, a$s)),
-  pith,
+class VText extends VNode {
+  constructor (text) {
+    super()
+    if (typeof text !== 'string') throw new Error('invalid text')
+    this.text = text
+  }
+  log () {
+    console.log(this.text)
+  }
+}
+
+class VElement extends VNode {
+  constructor (sel, data, children) {
+    super()
+    if (typeof sel !== 'string') throw new Error('invalid selector')
+    if (typeof data !== 'object' || data === null) throw new Error('invalid data')
+    if (!Array.isArray(children)) throw new Error('invalid children')
+    if (children.some(a => !(a instanceof VNode))) throw new Error('invalid child')
+    this.sel = sel
+    this.data = data
+    this.children = children
+    if (typeof data.key !== 'undefined') {
+      this.key = data.key
+    }
+    if (data.path) {
+      this.path = data.path.toString()
+    }
+  }
+  log () {
+    const grpKey = this.sel + (
+      typeof this.key !== 'undefined'
+      ? '/' + this.key
+      : ''
+    )
+    console.group(grpKey, this.path)
+    this.children.forEach(v => v.log())
+    console.groupEnd(grpKey)
+  }
+}
+
+const Element = (pmap = id) => (sel, data = {}) => Bark(
+  a$s => m.combineArray(
+    (sel, data, ...chlds) => new VElement(sel, data, chlds),
+    a$s
+  ),
   pith => c => {
-    c($(sel).map(sel => {
-      if (typeof sel !== 'string') throw new Error('invalid selector')
-      return sel
-    }))
-    c($(data).map(data => {
-      if (typeof data !== 'object' || data === null) throw new Error('invalid data')
-      return data
-    }))
+    c(sel)
+    c(data)
     pmap(pith)(
-      (sel, data, pith, pmap = id) => c(Element(sel, data, pith, pmap, cmap)),
-      text => c(TextElement(text))
+      pmap => (sel, data) => pith => c(Element(pmap)(sel, data)(pith)),
+      text => c($(text).map(text => new VText(text))),
+      vnode => c($(vnode).map(vnode => {
+        if (vnode instanceof VNode) return vnode
+        throw new Error('invalid vnode')
+      }))
     )
   }
 )
 
-module.exports = (sel, data, pith, fmap = id, cmap = id, path = nil) =>
-  Element(sel, data && pith ? data : {}, pith || data, p => pathRing(path, apiRing(fmap(p))), cmap)
-
-function pathRing (path, pith) {
-  return function pathPith (elm, txt) {
-    var i = 0
-    pith(
-      (sel, data, pith, pmap = id) => {
-        const key = i++
-        const thisPath = Cons(key, path)
-        elm(
-          sel,
-          $(data).map(data => Object.assign({path: thisPath, key}, data)),
-          pith,
-          pith => pathRing(thisPath, pmap(pith))
-        )
-      },
-      txt,
-      path
-    )
+const pathRing = path$ => pith => function pathPith (elm, text, vnode) {
+  var i = 0
+  const element = (pmap = id) => (sel, data = {}) => pith => {
+    const key = i++
+    const thisPath$ = path$.map(path => Cons(key, path)).multicast()
+    elm(compose(pathRing(thisPath$), pmap))(
+      sel, $(data).flatMap(data => thisPath$.map(path => Object.assign({path, key}, data)))
+    )(pith)
   }
+  pith(element, text, vnode, path$)
 }
 
-function apiRing (pith) {
-  return (elm, txt, path) => {
-    const h = (sel, data, pith, pmap = id) => (
-        !data && !pith
-        ? txt($(sel).map(text => typeof text === 'string' ? text : JSON.stringify(text)))
-        : elm(sel, data && pith ? data : {}, pith || data, pith => apiRing(pmap(pith)))
+const H$ = (pmap = id) => (sel, data = {path: nil}) =>
+  Element(compose(pathRing($(data).map(d => d.path)), pmap))(sel, data)
+
+module.exports = H$
+
+if (require.main === module) {
+  H$()('div.a')(
+    (elm, txt, vnode, path$) => {
+      elm()('button', {on: {click: true}})(
+        (elm, txt) => {
+          txt('hi2')
+        }
       )
-    h.path = path
-    pith(h)
-  }
+      txt('hi')
+      vnode(
+        H$()('div.a', path$.map(path => ({path: Cons('mount1', path)})))(
+          (elm, txt, vnode) => {
+            elm()('li')(id)
+            txt('hello')
+            elm()('li')(id)
+            elm()('li')(id)
+            elm()('li')(id)
+          }
+        )
+      )
+    }).tap(v => v.log()).drain()
 }

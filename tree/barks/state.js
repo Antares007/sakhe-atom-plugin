@@ -1,11 +1,21 @@
 const m = require('most')
 const $ = require('../$')
 const Bark = require('./bark')
-const {async: subject} = require('most-subject')
+const {async: subject, hold} = require('most-subject')
 const id = a => a
 const compose = (...fns) => fns.reduce((f, g) => (...args) => f(g(...args)))
 
 const chain = rmap$ => r => rmap$.map(rmap => rmap(r))
+const aChain = index => r => s => {
+  const l = Math.max(s.length, index + 1)
+  const b = new Array(l)
+  for (var i = 0; i < l; i++) {
+    b[i] = i === index ? r(s[i]) : s[i]
+  }
+  return b
+}
+const oChain = key => r => s => Object.assign({}, s, {[key]: r(s[key])})
+
 const CollectionBark = (pmap = id) => Bark(
   m.mergeArray,
   pith => function (m) {
@@ -18,14 +28,6 @@ const CollectionBark = (pmap = id) => Bark(
   }
 )
 
-const aChain = index => r => s => {
-  const l = Math.max(s.length, index + 1)
-  const b = new Array(l)
-  for (var i = 0; i < l; i++) {
-    b[i] = i === index ? r(s[i]) : s[i]
-  }
-  return b
-}
 const ArrayBark = (pmap = id) => CollectionBark(
   pith => (o, a, v, m) => {
     m(s => Array.isArray(s) ? s : [])
@@ -37,7 +39,6 @@ const ArrayBark = (pmap = id) => CollectionBark(
   }
 )
 
-const oChain = key => r => s => Object.assign({}, s, {[key]: r(s[key])})
 const ObjectBark = (pmap = id) => CollectionBark(
   pith => (o, a, v, m) => {
     m(s => typeof s === 'object' && s !== null ? s : {})
@@ -56,12 +57,12 @@ const stateRing = state$ => pith => {
     (pmap = id) => key => obj(compose(stateRing(select(key)), pmap))(key),
     (pmap = id) => key => arr(compose(stateRing(select(key)), pmap))(key),
     val,
-    state$.skipRepeats().multicast()
+    key => state$.map(s => s[key]).filter(a => typeof a !== 'undefined').skipRepeats()
   )
 }
 
 const ReducerBark = (pmap = id) => (initState = {}) => (pith) => {
-  const state$ = subject()
+  const state$ = hold(1, subject())
   return ObjectBark(compose(stateRing(state$), pmap))(pith)
     .scan((s, r) => r(s), initState)
     .skipRepeats()
@@ -73,27 +74,28 @@ module.exports = { ArrayBark, ObjectBark, ReducerBark }
 
 if (require.main === module) {
   ReducerBark()()(
-    (o, a, v, state$) => {
-      v('key', s => 'value')
+    (o, a, v, select) => {
+      v('key', m.of(s => 'value$'))
       o()('a')(
         (o, a, v, state$) => {
           v('key', s => 'value')
         }
       )
       a()('array')(
-        (o, a, v, state$) => {
-          state$.observe(console.log.bind(console))
+        (o, a, v, select) => {
+          select(2).observe(console.log.bind(console))
           v(2, s => 42)
         }
       )
       a()('array')(
-        (o, a, v, state$) => {
+        (o, a, v, select) => {
           v(1, s => 41)
+          v(2, s => s - 1)
         }
       )
     }
   )
-  // .tap(debug('====='))
+  // .tap(x => console.log(x))
   .take(10)
   .drain()
 }

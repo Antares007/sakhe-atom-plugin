@@ -1,63 +1,90 @@
-// const m = require('most')
+const m = require('most')
 const $ = require('../$')
 const {Cons, nil} = require('../list')
 const { ReducerBark } = require('./state')
+const {async: subject, hold} = require('most-subject')
 const toVnode = require('snabbdom/tovnode').default
-const {async: subject} = require('most-subject')
+const {init} = require('snabbdom')
+const createActionModule = require('../../lib/drivers/snabbdom/actionModule')
+const defaultModules = ['class', 'props', 'style', 'attributes'].map(
+  name => require('snabbdom/modules/' + name).default
+)
 const h$ = require('./h$')
 const id = a => a
 
-const MountBark = (pith, pmap = id) => ReducerBark(pmap)(
-  (obj, arr, val, state$) => {
-    var i = 0
-    pmap(pith)(
-      pmap => elm => pith => {
-        const key = i++
-        const elm$ = $(elm).skipRepeats()
-        obj()(key)(
-          (o, a, v, state$) => {
-            elm$.map(elm => {
-              const rootVnode = toVnode(elm)
-              const action$ = subject()
-              const actionModule = require('../../lib/drivers/snabbdom/actionModule')(function (event) {
-                action$.next({ vnode: this, action: this.data.on[event.type], event })
-              })
-              const patch = require('snabbdom').init([
-                ...['class', 'props', 'style', 'attributes'].map(name => require('snabbdom/modules/' + name).default),
-                actionModule
-              ])
-              return h$()(
-                rootVnode.sel, rootVnode.data
-              )(pith).until(elm$.skip(1)).reduce(patch, rootVnode)
-            })
-            v('vnode', void 0)
-          }
-        )
-        r.o('selectors', r => r.o(rootVnode.sel, r => {
-          r('vnode',
-            h$(
-              rootVnode.sel,
-              rootVnode.data,
-              pith,
-              function apiRing (pith) {
-                return (elm, txt, path) => {
-                  const h = (sel, data, pith) =>
-                    !data && !pith
-                    ? txt(sel)
-                    : elm(id, pith => apiRing(pith))(sel, pith ? data : {})(pith || data)
-                  h.path = path
-                  h.$ = action$.filter(x => x.vnode.data.path.endsWith(path))
-                  pith(h)
-                }
-              },
-              dc => a$s => dc(a$s).map(([sel, data, ...children]) => ({sel, key: data.key, data, children})),
-              Cons(i++, nil)
-            ).scan((oldVnode, vnode) => patch(oldVnode, vnode), rootVnode).map(vnode => s => vnode)
+// const pairwise = (initial, stream) => m.loop(pairs, initial, stream)
+// const pairwise1 = stream => m.skip(1, pairwise(void 0, stream))
+// const pairs = (prev, current) => ({ seed: current, value: [prev, current] })
+
+const MountBark = (pmap = id) => (initState = {}, path = nil) => ReducerBark(pith => (obj, arr, val, state$) => {
+  var i = 0
+  pmap(pith)(
+    (pmap = id) => elm => pith => {
+      const key = i++
+      const elm$ = hold(1, $(elm)).skipRepeats()
+      obj()('mount' + key)(
+        (o, a, v, state$) => {
+          const proxy$ = subject()
+          v('node', proxy$.join()
+            .startWith(s => typeof s === 'object' && s !== null ? s : {})
           )
-        }))
-      }
+          const patching$ = elm$.map(elm => {
+            const rootVnode = toVnode(elm)
+            const action$ = subject()
+            const patch = init([
+              ...defaultModules,
+              createActionModule(function (event) {
+                const action = this.data.on[event.type]
+                action$.next({ vnode: this, action, event })
+              })
+            ])
+            const thisPath = Cons(key, path)
+            // var j = 0
+            return h$(function map (pith) {
+              return (element, text, vnode, path$) => {
+                const mount = pmap => pith => {
+                  // const key = j++
+                  console.log('mount')
+                  state$.take(1).observe(x => console.log(x))
+                  // proxy$.next(
+                  //   state$.flatMap(state =>
+                  //     MountBark(pmap)({}, Cons(key, thisPath))(pith)
+                  //       .map(state => s => Object.assign({}, s, {[key]: state}))
+                  //   )
+                  // )
+                }
+                pmap(pith)(element, text, vnode, path$, mount)
+              }
+            })(
+              rootVnode.sel,
+              Object.assign({}, rootVnode.data, {path: thisPath})
+            )(pith)
+              .until(elm$.skip(1).take(1))
+              .reduce(patch, rootVnode)
+              .then(vnode => (s) => patch(vnode, rootVnode))
+          }).awaitPromises()
+            .flatMap(fd => elm$.skip(1).take(1).map((elm) => fd))
+          v('vnode', patching$)
+        }
+      )
+    }
+  )
+})(initState)
+
+module.exports = MountBark
+const counter$ = p => m.periodic(p).scan(a => a + 1, 0)
+MountBark()()(
+  patch => {
+    // var i = 0
+    patch()(counter$(1000).map(i => document.getElementById('root-node' + (i % 4))))(
+      m.of((element, txt, vnode, path$, mount) => {
+        txt('hello')
+        mount()(patch => {
+
+        })
+      }).delay(100)
     )
   }
 )
-
-module.exports = MountBark
+.tap(x => console.info(x))
+.drain()

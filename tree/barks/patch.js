@@ -45,16 +45,7 @@ const PatchBark = (pmap = id) => (elm, path = nil) => ReducerBark(
           val(
             key,
             s => H$(
-              function map (pith) {
-                return (elm, txt, vnode, path) => {
-                  pmap(pith)(
-                    (pmap = id) => elm(compose(map, pmap)),
-                    txt, vnode,
-                    action$.filter(x => x.vnode.data.path.endsWith(path)),
-                    path
-                  )
-                }
-              }
+              map
             )(
               sel,
               $(data).map(d => Object.assign({key}, d)),
@@ -65,7 +56,17 @@ const PatchBark = (pmap = id) => (elm, path = nil) => ReducerBark(
       }
       const end = e => val('end', $(e).constant(s => true))
 
-      obj()('state')(pmap(pith).bind(void 0, element, end))
+      obj()('state')(pmap(pith)(element, end))
+      function map (pith) {
+        return (elm, txt, vnode, path) => {
+          pmap(pith)(
+            (pmap = id) => elm(compose(map, pmap)),
+            txt, vnode,
+            action$.filter(x => x.vnode.data.path.endsWith(path)),
+            path
+          )
+        }
+      }
     }
   }
 )()
@@ -73,21 +74,24 @@ const PatchBark = (pmap = id) => (elm, path = nil) => ReducerBark(
 module.exports = PatchBark
 
 const m = require('most')
-PatchBark()(document.getElementById('root-node'))((elm, end, o, a, v, s) => {
-  o()('key')((o, a, v, s) => v('key', s => 'value'))
-  elm()('div.a')((elm, txt, vnode, $, path) => {
-    $.observe(x => console.warn(x))
-    elm()('h1', {on: {click: 1}})((e, txt) => txt(s('key', s('key'))))
+PatchBark()(document.getElementById('root-node'))(
+  (elm, end) =>
+  (o, a, v, s) => {
+    o()('key')((o, a, v, s) => v('key', s => 'value'))
     elm()('div.a')((elm, txt, vnode, $, path) => {
       $.observe(x => console.warn(x))
       elm()('h1', {on: {click: 1}})((e, txt) => txt(s('key', s('key'))))
+      elm()('div.a')((elm, txt, vnode, $, path) => {
+        $.observe(x => console.warn(x))
+        elm()('h1', {on: {click: 1}})((e, txt) => txt(s('key', s('key'))))
+      })
     })
-  })
-  elm()('div.b')((elm, txt, vnode, $, path) => {
-    elm()('h2')((e, txt) => txt('hello'))
-  })
-  elm()('div.c')((elm, txt, vnode, $, path) => {
-    elm()('h3')((e, txt) => txt('hello'))
-  })
-  end(m.of().delay(3000))
-}).tap(x => console.info(x)).drain()
+    elm()('div.b')((elm, txt, vnode, $, path) => {
+      elm()('h2')((e, txt) => txt('hello'))
+    })
+    elm()('div.c')((elm, txt, vnode, $, path) => {
+      elm()('h3')((e, txt) => txt('hello'))
+    })
+    end(m.of().delay(3000))
+  }
+).tap(x => console.info(x)).drain()

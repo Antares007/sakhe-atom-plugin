@@ -3,6 +3,7 @@ const H$ = require('./h$')
 const {ReducerBark} = require('./state')
 const {Cons, nil} = require('../list')
 const id = a => a
+const compose = (...fns) => fns.reduce((f, g) => (...args) => f(g(...args)))
 
 const {async: subject} = require('most-subject')
 const toVnode = require('snabbdom/tovnode').default
@@ -38,12 +39,23 @@ const PatchBark = (pmap = id) => (elm, path = nil) => ReducerBark(
         .then(vnode => patchVnode(vnode, rootVnode))
 
       var i = 0
-      const element = pmap => (sel, data = {}) => pith => {
+      const element = (pmap = id) => (sel, data = {}) => pith => {
         const key = i++
         arr()('vnode$s')((obj, arr, val) => {
           val(
             key,
-            s => H$(pmap)(
+            s => H$(
+              function map (pith) {
+                return (elm, txt, vnode, path) => {
+                  pmap(pith)(
+                    (pmap = id) => elm(compose(map, pmap)),
+                    txt, vnode,
+                    action$.filter(x => x.vnode.data.path.endsWith(path)),
+                    path
+                  )
+                }
+              }
+            )(
               sel,
               $(data).map(d => Object.assign({key}, d)),
               Cons(key, path)
@@ -63,13 +75,18 @@ module.exports = PatchBark
 const m = require('most')
 PatchBark()(document.getElementById('root-node'))((elm, end, o, a, v, s) => {
   o()('key')((o, a, v, s) => v('key', s => 'value'))
-  elm()('div.a')((elm, txt, vnode, path) => {
-    elm()('h1')((e, txt) => txt(s('key', s('key'))))
+  elm()('div.a')((elm, txt, vnode, $, path) => {
+    $.observe(x => console.warn(x))
+    elm()('h1', {on: {click: 1}})((e, txt) => txt(s('key', s('key'))))
+    elm()('div.a')((elm, txt, vnode, $, path) => {
+      $.observe(x => console.warn(x))
+      elm()('h1', {on: {click: 1}})((e, txt) => txt(s('key', s('key'))))
+    })
   })
-  elm()('div.b')((elm, txt, vnode, path) => {
+  elm()('div.b')((elm, txt, vnode, $, path) => {
     elm()('h2')((e, txt) => txt('hello'))
   })
-  elm()('div.c')((elm, txt, vnode, path) => {
+  elm()('div.c')((elm, txt, vnode, $, path) => {
     elm()('h3')((e, txt) => txt('hello'))
   })
   end(m.of().delay(3000))

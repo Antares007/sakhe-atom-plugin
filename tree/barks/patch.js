@@ -1,4 +1,3 @@
-const m = require('most')
 const $ = require('../$')
 const H$ = require('./h$')
 const {ReducerBark} = require('./state')
@@ -39,31 +38,33 @@ const PatchBark = (pmap = id) => (elm, path = nil) => ReducerBark(
         .then(vnode => patchVnode(vnode, rootVnode))
 
       var i = 0
-      pmap(pith)(
-        pmap => (sel, data = {}) => pith => {
-          const key = i++
-          arr()('vnode$s')((obj, arr, val) => {
-            val(
-              key,
-              s => H$(pmap)(
-                sel,
-                $(data).map(d => Object.assign({key}, d)),
-                Cons(key, path)
-              )(pith)
-            )
-          })
-        },
-        e => val('end', $(e).constant(s => true))
-      )
+      const element = pmap => (sel, data = {}) => pith => {
+        const key = i++
+        arr()('vnode$s')((obj, arr, val) => {
+          val(
+            key,
+            s => H$(pmap)(
+              sel,
+              $(data).map(d => Object.assign({key}, d)),
+              Cons(key, path)
+            )(pith)
+          )
+        })
+      }
+      const end = e => val('end', $(e).constant(s => true))
+
+      obj()('state')(pmap(pith).bind(void 0, element, end))
     }
   }
 )()
 
 module.exports = PatchBark
 
-PatchBark()(document.getElementById('root-node'))((elm, end) => {
+const m = require('most')
+PatchBark()(document.getElementById('root-node'))((elm, end, o, a, v, s) => {
+  o()('key')((o, a, v, s) => v('key', s => 'value'))
   elm()('div.a')((elm, txt, vnode, path) => {
-    elm()('h1')((e, txt) => txt('hello'))
+    elm()('h1')((e, txt) => txt(s('key', s('key'))))
   })
   elm()('div.b')((elm, txt, vnode, path) => {
     elm()('h2')((e, txt) => txt('hello'))

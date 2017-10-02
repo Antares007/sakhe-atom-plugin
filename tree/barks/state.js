@@ -7,14 +7,25 @@ const compose = (...fns) => fns.reduce((f, g) => (...args) => f(g(...args)))
 
 const chain = rmap$ => r => rmap$.map(rmap => rmap(r))
 const aChain = index => r => s => {
+  const os = s[index]
+  const ns = r(os)
+  if (os === ns && index < s.length) return s
   const l = Math.max(s.length, index + 1)
   const b = new Array(l)
   for (var i = 0; i < l; i++) {
-    b[i] = i === index ? r(s[i]) : s[i]
+    b[i] = i === index ? ns : s[i]
   }
   return b
 }
-const oChain = key => r => s => Object.assign({}, s, {[key]: r(s[key])})
+const oChain = key => r => s => {
+  const os = s[key]
+  const ns = r(os)
+  return (
+    os === ns
+    ? s
+    : Object.assign({}, s, {[key]: ns})
+  )
+}
 
 const CollectionBark = (pmap = id) => Bark(
   m.mergeArray,
@@ -57,7 +68,7 @@ const stateRing = state$ => pith => {
     (pmap = id) => key => obj(compose(stateRing(select(key)), pmap))(key),
     (pmap = id) => key => arr(compose(stateRing(select(key)), pmap))(key),
     val,
-    key => state$.map(s => s[key]).filter(a => typeof a !== 'undefined').skipRepeats()
+    (key, $ = state$) => $.map(s => s[key]).filter(a => typeof a !== 'undefined').skipRepeats()
   )
 }
 

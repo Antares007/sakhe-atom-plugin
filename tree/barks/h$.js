@@ -66,26 +66,29 @@ const Element = (pmap = id) => (sel, data = {}) => Bark(
   }
 )
 
-const pathRing = path$ => pith => function pathPith (elm, text, vnode) {
+const pathRing = path => pith => function pathPith (elm, text, vnode) {
   var i = 0
   const element = (pmap = id) => (sel, data = {}) => pith => {
     const key = i++
-    const thisPath$ = path$.map(path => Cons(key, path)).multicast()
-    elm(compose(pathRing(thisPath$), pmap))(
-      sel, $(data).flatMap(data => thisPath$.map(path => Object.assign({path, key}, data)))
+    const thisPath = Cons(key, path)
+    elm(compose(pathRing(thisPath), pmap))(
+      sel, $(data).map(data => Object.assign({path, key}, data))
     )(pith)
   }
-  pith(element, text, vnode, path$)
+  pith(element, text, vnode, path)
 }
 
-const H$ = (pmap = id) => (sel, data = {path: nil}) =>
-  Element(compose(pathRing($(data).map(d => d.path)), pmap))(sel, data)
+const H$ = (pmap = id) => (sel, data = {}, path = nil) =>
+  Element(compose(pathRing(path), pmap))(
+    sel,
+    $(data).map(data => Object.assign({path}, data))
+  )
 
 module.exports = H$
 
 if (require.main === module) {
   H$()('div.a')(
-    (elm, txt, vnode, path$) => {
+    (elm, txt, vnode, path) => {
       elm()('button', {on: {click: true}})(
         (elm, txt) => {
           txt('hi2')
@@ -93,7 +96,7 @@ if (require.main === module) {
       )
       txt('hi')
       vnode(
-        H$()('div.a', path$.map(path => ({path: Cons('mount1', path)})))(
+        H$()('div.a', {}, Cons('mount1', path))(
           (elm, txt, vnode) => {
             elm()('li')(id)
             txt('hello')

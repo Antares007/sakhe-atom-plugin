@@ -25,39 +25,51 @@ const PatchBark = (pmap = id) => (elm, path = nil) => ReducerBark(
           action$.next({ vnode: this, action, event })
         })
       ])
-      select('vnode$')
+      select('vnode$s')
+        .filter(vnode$s => vnode$s.length)
+        .map(vnode$s =>
+          H$()(rootVnode.sel, rootVnode.data, path)((e, t, v) => {
+            vnode$s.forEach(vnode$ => v(vnode$))
+          })
+        )
         .switchLatest()
         .until(select('end').filter(Boolean).take(1))
+        .tap(x => x.log())
         .reduce(patchVnode, rootVnode)
         .then(vnode => patchVnode(vnode, rootVnode))
 
-      const end = e => val('end', $(e).constant(s => true))
-      const patch = vnode$ => val('vnode$', s => vnode$)
       var i = 0
-      const node = pmap => elm => pith => {
-        const key = 'node' + i++
-        val(key, PatchBark(pmap)(elm, Cons(key, path))(pith).map(s => () => s))
-      }
-      pmap(pith)(node, patch, end, action$, path)
+      pmap(pith)(
+        pmap => (sel, data = {}) => pith => {
+          const key = i++
+          arr()('vnode$s')((obj, arr, val) => {
+            val(
+              key,
+              s => H$(pmap)(
+                sel,
+                $(data).map(d => Object.assign({key}, d)),
+                Cons(key, path)
+              )(pith)
+            )
+          })
+        },
+        e => val('end', $(e).constant(s => true))
+      )
     }
   }
 )()
 
 module.exports = PatchBark
 
-PatchBark()(document.getElementById('root-node'))((node, patch, end, action$, path) => {
-  patch(
-    H$()('div#root-node')(function (elm, txt, vnode, path$) {
-      elm()('h1')((e, txt) => txt('hello2'))
-    })
-  )
-  end(m.of().delay(2000))
-  node()(document.getElementById('root-node1'))((node, patch, end, action$, path) => {
-    patch(
-      H$()('div#root-node')(function (elm, txt, vnode, path$) {
-        elm()('h1')((e, txt) => txt('hello1'))
-      })
-    )
-    end(m.of().delay(3000))
+PatchBark()(document.getElementById('root-node'))((elm, end) => {
+  elm()('div.a')((elm, txt, vnode, path) => {
+    elm()('h1')((e, txt) => txt('hello'))
   })
+  elm()('div.b')((elm, txt, vnode, path) => {
+    elm()('h2')((e, txt) => txt('hello'))
+  })
+  elm()('div.c')((elm, txt, vnode, path) => {
+    elm()('h3')((e, txt) => txt('hello'))
+  })
+  end(m.of().delay(3000))
 }).tap(x => console.info(x)).drain()

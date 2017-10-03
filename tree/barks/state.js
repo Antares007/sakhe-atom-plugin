@@ -21,6 +21,8 @@ const oChain = key => r => s => {
   const ns = r(os)
   return (os === ns ? s : Object.assign({}, s, {[key]: ns}))
 }
+const aInitState = s => Array.isArray(s) ? s : []
+const oInitState = s => typeof s === 'object' && s !== null ? s : {}
 
 const CollectionBark = (pmap = id) => Bark(
   m.mergeArray,
@@ -28,42 +30,38 @@ const CollectionBark = (pmap = id) => Bark(
     pmap(pith)(
       pmap => rmap => pith => m(ObjectBark(pmap)(pith).map(rmap)),
       pmap => rmap => pith => m(ArrayBark(pmap)(pith).map(rmap)),
-      (rmap, r) => m($(r).map(rmap)),
-      m
+      (rmap, r) => m($(r).map(rmap))
     )
   }
 )
 
 const ArrayBark = (pmap = id) => CollectionBark(
-  pith => (o, a, v, m) => {
-    m(s => Array.isArray(s) ? s : [])
+  pith => (o, a, v) => {
     pmap(pith)(
-      pmap => index => o(pmap)(aChain(index)),
-      pmap => index => a(pmap)(aChain(index)),
-      (index, r) => v(aChain(index), r)
+      pmap => index => o(pmap)(r => s => aChain(index)(r)(aInitState(s))),
+      pmap => index => a(pmap)(r => s => aChain(index)(r)(aInitState(s))),
+      (index, r) => v(r => s => aChain(index)(r)(aInitState(s)), r)
     )
   }
 )
 
 const ObjectBark = (pmap = id) => CollectionBark(
-  pith => (o, a, v, m) => {
-    m(s => typeof s === 'object' && s !== null ? s : {})
+  pith => (o, a, v) => {
     pmap(pith)(
-      pmap => key => o(pmap)(oChain(key)),
-      pmap => key => a(pmap)(oChain(key)),
-      (key, r) => v(oChain(key), r)
+      pmap => key => o(pmap)(r => s => oChain(key)(r)(oInitState(s))),
+      pmap => key => a(pmap)(r => s => oChain(key)(r)(oInitState(s))),
+      (key, r) => v(r => s => oChain(key)(r)(oInitState(s)), r)
     )
   }
 )
 
 const stateRing = state$ => pith => {
-  const select = (key, $ = state$) =>
+  const select = (key, $ = state$.skipRepeats().multicast()) =>
     $.map(s => s[key])
-      .skipRepeats()
       .filter(a => typeof a !== 'undefined')
   return (obj, arr, val) => pith(
-    (pmap = id) => key => obj(compose(stateRing(select(key)), pmap))(key),
-    (pmap = id) => key => arr(compose(stateRing(select(key)), pmap))(key),
+    (pmap = id) => key => obj(compose(stateRing(select(key, state$)), pmap))(key),
+    (pmap = id) => key => arr(compose(stateRing(select(key, state$)), pmap))(key),
     val,
     select
   )
@@ -84,20 +82,24 @@ module.exports = { ArrayBark, ObjectBark, ReducerBark }
 
 if (require.main === module) {
   ReducerBark()()((o, a, v, select) => {
-    v('key', m.of(s => 'value$'))
+    // v('key', m.of(s => 'value$'))
     o()('a')((o, a, v, state$) => {
-      v('key', s => 'value')
+      o()('a')((o, a, v, state$) => {
+        o()('a')((o, a, v, state$) => {
+          v('key', s => 'value')
+        })
+      })
     })
     a()('array')((o, a, v, select) => {
-      select(2).observe(console.log.bind(console))
       v(2, s => 42)
     })
     a()('array')((o, a, v, select) => {
       v(1, s => 41)
       v(2, s => s - 1)
     })
+    select('array').observe(console.log.bind(console))
   })
-  .tap(x => console.log(x))
+  // .tap(x => console.log(x))
   .take(10)
   .drain()
 }

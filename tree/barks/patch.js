@@ -11,6 +11,8 @@ const defaultModules = ['class', 'props', 'style', 'attributes'].map(
   name => require('snabbdom/modules/' + name).default
 )
 
+const css$ = require('./css$')
+
 const apiRing = pith => (elm, txt, vnode, action$, path) => {
   const h = (...args) => (
     args.length === 1
@@ -24,6 +26,7 @@ const apiRing = pith => (elm, txt, vnode, action$, path) => {
   h.vnode = vnode
   h.$ = action$
   h.path = path
+  h.css$ = css$
   pith(h)
 }
 

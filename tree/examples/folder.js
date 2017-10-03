@@ -1,5 +1,3 @@
-const debug = require('debug') // eslint-disable-line
-const css$ = require('./css$')
 const m = require('most')
 const {join: pathJoin} = require('path')
 const watch$ = require('./watch$')
@@ -17,7 +15,7 @@ function Folder (path, s) {
   return h => {
     h(
       'ul',
-      {style: css$` list-style-type: none; `},
+      {style: h.css$` list-style-type: none; `},
       watch$(path).take(1)
         .map(([p, c]) => c)
         .map(entries => Entries(path, entries))

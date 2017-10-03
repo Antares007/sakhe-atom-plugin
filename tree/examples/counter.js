@@ -1,4 +1,4 @@
-const frame$ = require('./animation-frame') // .take(1000)
+const frame$ = require('./animation-frame').multicast() // .take(1000)
 const pi2 = Math.PI * 2
 const cycle$ = frame$.scan(i => i >= pi2 ? 0 : i + (0.15), 0)
 const sin$ = cycle$.map(i => Math.sin(i))

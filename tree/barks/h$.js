@@ -41,7 +41,7 @@ class VElement extends VNode {
       ? '/' + this.key
       : ''
     )
-    console.group(grpKey, this.path)
+    console.groupCollapsed(grpKey, this.path)
     this.children.forEach(v => v.log())
     console.groupEnd(grpKey)
   }
@@ -55,14 +55,13 @@ const Element = (pmap = id) => (sel, data = {}) => Bark(
   pith => c => {
     c(sel)
     c(data)
-    pmap(pith)(
-      pmap => (sel, data) => pith => c(Element(pmap)(sel, data)(pith)),
-      text => c($(text).map(text => new VText(text))),
-      vnode => c($(vnode).map(vnode => {
-        if (vnode instanceof VNode) return vnode
-        throw new Error('invalid vnode')
-      }))
-    )
+    const text = text => c($(text).map(text => new VText(text)))
+    const element = pmap => (sel, data) => pith => c(Element(pmap)(sel, data)(pith))
+    const vnode = vnode => c($(vnode).map(vnode => {
+      if (vnode instanceof VNode) return vnode
+      throw new Error('invalid vnode')
+    }))
+    pmap(pith)(element, text, vnode)
   }
 )
 

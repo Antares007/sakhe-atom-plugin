@@ -2,13 +2,13 @@ const m = require('most')
 const animationFrame$ = require('./animation-frame').take(1500)
 const cycle$ = animationFrame$.scan(i => i >= Math.PI * 2 ? 0 : i + (0.05), 0)
 const sin$ = cycle$.map(i => Math.sin(i))
-const MountBark = require('../barks/mount')
+const PatchBark = require('../barks/patch')
 
-MountBark(function (r, m) {
-  m(document.getElementById('root-node'), Tree(2, 2))
-  m(document.getElementById('root-node'), Tree(2, 3))
-}).throttle(1000)
-  .tap(console.log.bind(console))
+PatchBark()(document.getElementById('root-node'))(h => {
+  h('div.app1', Tree(2, 3))
+})
+  .debounce(100)
+  .tap(x => x.log(x))
   .drain()
 
 function Tree (d = 1, w = 3) {

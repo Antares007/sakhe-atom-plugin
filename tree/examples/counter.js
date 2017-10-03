@@ -1,9 +1,10 @@
-// const m = require('most')
 const css$ = require('./css$')
-const animationFrame$ = require('./animation-frame').take(100)
-const cycle$ = animationFrame$.scan(i => i >= Math.PI * 2 ? 0 : i + (0.15), 0)
+const frame$ = require('./animation-frame') // .take(1000)
+const pi2 = Math.PI * 2
+const cycle$ = frame$.scan(i => i >= pi2 ? 0 : i + (0.15), 0)
 const sin$ = cycle$.map(i => Math.sin(i))
 const cos$ = cycle$.map(i => Math.cos(i))
+
 const PatchBark = require('../barks/patch')
 
 PatchBark()(document.getElementById('root-node'))(h => {
@@ -29,8 +30,8 @@ function Counter (d = 1) { // eslint-disable-line
         style: css$`
           position: relative; outline: none
           border-radius: ${sin$.map(i => Math.abs(Math.floor(i * 20)))}px
-          // left: ${cos$.map(i => Math.floor(r * i))}px
-          // top: ${sin$.map(i => Math.floor(r * i))}px
+          left: ${cos$.map(i => Math.floor(r * i))}px
+          top: ${sin$.map(i => Math.floor(r * i))}px
           backgroundColor: rgb(255, ${color$(sin$)}, ${color$(cos$)})
         `
       }, h => {
@@ -42,8 +43,8 @@ function Counter (d = 1) { // eslint-disable-line
         style: css$`
           position: relative; outline: none
           border-radius: ${cos$.map(i => Math.abs(Math.floor(i * 20)))}px
-          // left: ${sin$.map(i => Math.floor(r * i))}px
-          // top: ${cos$.map(i => Math.floor(r * i))}px
+          left: ${sin$.map(i => Math.floor(r * i))}px
+          top: ${cos$.map(i => Math.floor(r * i))}px
           backgroundColor: rgb(${color$(sin$)}, ${color$(cos$)}, 255)
         `
       }, h => {

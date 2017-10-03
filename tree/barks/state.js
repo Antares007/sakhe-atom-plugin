@@ -19,11 +19,7 @@ const aChain = index => r => s => {
 const oChain = key => r => s => {
   const os = s[key]
   const ns = r(os)
-  return (
-    os === ns
-    ? s
-    : Object.assign({}, s, {[key]: ns})
-  )
+  return (os === ns ? s : Object.assign({}, s, {[key]: ns}))
 }
 
 const CollectionBark = (pmap = id) => Bark(
@@ -85,29 +81,21 @@ const ReducerBark = (pmap = id) => (initState = {}) => (pith) => {
 module.exports = { ArrayBark, ObjectBark, ReducerBark }
 
 if (require.main === module) {
-  ReducerBark()()(
-    (o, a, v, select) => {
-      v('key', m.of(s => 'value$'))
-      o()('a')(
-        (o, a, v, state$) => {
-          v('key', s => 'value')
-        }
-      )
-      a()('array')(
-        (o, a, v, select) => {
-          select(2).observe(console.log.bind(console))
-          v(2, s => 42)
-        }
-      )
-      a()('array')(
-        (o, a, v, select) => {
-          v(1, s => 41)
-          v(2, s => s - 1)
-        }
-      )
-    }
-  )
-  // .tap(x => console.log(x))
+  ReducerBark()()((o, a, v, select) => {
+    v('key', m.of(s => 'value$'))
+    o()('a')((o, a, v, state$) => {
+      v('key', s => 'value')
+    })
+    a()('array')((o, a, v, select) => {
+      select(2).observe(console.log.bind(console))
+      v(2, s => 42)
+    })
+    a()('array')((o, a, v, select) => {
+      v(1, s => 41)
+      v(2, s => s - 1)
+    })
+  })
+  .tap(x => console.log(x))
   .take(10)
   .drain()
 }

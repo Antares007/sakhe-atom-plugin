@@ -79,32 +79,27 @@ const pathRing = path => pith => function pathPith (elm, text, vnode) {
 }
 
 const H$ = (pmap = id) => (sel, data = {}, path = nil) =>
-  Element(compose(pathRing(path), pmap))(
-    sel,
-    $(data).map(data => Object.assign({path}, data))
-  )
+  Element(compose(pathRing(path), pmap))(sel, data)
 
 module.exports = H$
 
 if (require.main === module) {
-  H$()('div.a')(
-    (elm, txt, vnode, path) => {
-      elm()('button', {on: {click: true}})(
-        (elm, txt) => {
-          txt('hi2')
-        }
-      )
-      txt('hi')
-      vnode(
-        H$()('div.a', {}, Cons('mount1', path))(
-          (elm, txt, vnode) => {
-            elm()('li')(id)
-            txt('hello')
-            elm()('li')(id)
-            elm()('li')(id)
-            elm()('li')(id)
-          }
-        )
-      )
-    }).tap(v => v.log()).drain()
+  H$()('div.a')((elm, txt, vnode, path) => {
+    elm()('button', {on: {click: true}})((elm, txt) => {
+      elm()('button', {on: {click: true}})((elm, txt) => {
+        txt('hi2')
+      })
+    })
+    txt('hi')
+    vnode(H$()('div.a', {path}, Cons('mount1', path))((elm, txt, vnode) => {
+      elm()('li')(id)
+      elm()('button', {on: {click: true}})((elm, txt) => {
+        elm()('button', {on: {click: true}})((elm, txt) => {
+          txt('hi3')
+        })
+      })
+      elm()('li')(id)
+      elm()('li')(id)
+    }))
+  }).tap(v => v.log()).drain()
 }

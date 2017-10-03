@@ -4,12 +4,13 @@ const m = require('most')
 const {join: pathJoin} = require('path')
 const watch$ = require('./watch$')
 
-const MountBark = require('../barks/mount')
+const PatchBark = require('../barks/patch')
 
-MountBark(function (r, m) {
-  m(document.getElementById('root-node'), Folder(pathJoin(__dirname, '../..')))
-}).throttle(1000)
-  .tap(console.log.bind(console))
+PatchBark()(document.getElementById('root-node'))(h => {
+  h('div.app1', Folder(pathJoin(__dirname, '../..')))
+})
+  .debounce(100)
+  .tap(x => x.log(x))
   .drain()
 
 function Folder (path, s) {

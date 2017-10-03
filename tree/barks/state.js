@@ -73,7 +73,9 @@ const ReducerBark = (pmap = id) => (initState = {}) => (pith) => {
   const state$ = hold(1, subject())
   return ObjectBark(compose(stateRing(state$), pmap))(pith)
     .scan((s, r) => r(s), initState)
+    .skip(1)
     .skipRepeats()
+    .flatMapEnd(() => { state$.complete(); return m.empty() })
     .tap(state$.next.bind(state$))
     .multicast()
 }

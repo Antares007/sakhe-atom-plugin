@@ -1,29 +1,21 @@
 // const m = require('most')
 const css$ = require('./css$')
-const animationFrame$ = require('./animation-frame').take(1)
+const animationFrame$ = require('./animation-frame').take(100)
 const cycle$ = animationFrame$.scan(i => i >= Math.PI * 2 ? 0 : i + (0.15), 0)
 const sin$ = cycle$.map(i => Math.sin(i))
 const cos$ = cycle$.map(i => Math.cos(i))
-const MountBark = require('../barks/mount')
+const PatchBark = require('../barks/patch')
 
-MountBark(function (r, m) {
-  r.a('list', r => {
-    r(0, s => 42)
-    r.a(1, r => {
-      r(0, s => 42)
-    })
-  })
-  r.a('list', r => {
-    r(2, s => 42)
-  })
-  m(document.getElementById('root-node'), h => {
+PatchBark()(document.getElementById('root-node'))(h => {
+  h('div.app1', h => {
     h('div', showHideRing(Counter(0)))
     h('div', showHideRing(Counter(1)))
     h('div', showHideRing(Counter(2)))
     h('div', showHideRing(Counter(3)))
   })
-}).throttle(1000)
-  .tap(console.log.bind(console))
+})
+  .debounce(100)
+  .tap(x => x.log(x))
   .drain()
 
 function Counter (d = 1) { // eslint-disable-line
@@ -58,7 +50,7 @@ function Counter (d = 1) { // eslint-disable-line
         h('span', {}, h => h('-'))
         if (d > 0) h('div', {}, Counter(d - 1))
       })
-      h('h3', {}, h => h(sum$))
+      h('h3', {}, h => h(sum$.map(n => n.toString())))
     })
   }
 }

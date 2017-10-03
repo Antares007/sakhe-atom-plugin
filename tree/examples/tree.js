@@ -1,6 +1,6 @@
 const m = require('most')
-const frame$ = require('./animation-frame').take(100)
-const cycle$ = frame$.scan(i => i >= Math.PI * 2 ? 0 : i + (0.05), 0)
+const frame$ = require('./animation-frame').multicast().take(20)
+const cycle$ = frame$.scan(i => i >= Math.PI * 2 ? 0 : i + (0.15), 0)
 const sin$ = cycle$.map(i => Math.sin(i))
 const PatchBark = require('../barks/patch')
 

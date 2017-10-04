@@ -51,8 +51,15 @@ const stateRing = state$ => pith => {
     select
   )
 }
-
-const ReducerBark = (pmap = id) => (initState = {}, type = ObjectBark) => (pith) => {
+const apiRing = pith => (obj, arr, val, select) => {
+  const s = (...args) => val(...args)
+  s.select = select
+  s.obj = obj(apiRing)
+  s.arr = arr(apiRing)
+  s.apiRing = apiRing
+  pith(s)
+}
+const ReducerBark = (pmap = apiRing) => (initState = {}, type = ObjectBark) => (pith) => {
   const state$ = hold(1, subject())
   return type(compose(stateRing(state$), pmap))(pith)
     .scan((s, r) => r(s), initState)
@@ -66,21 +73,18 @@ const ReducerBark = (pmap = id) => (initState = {}, type = ObjectBark) => (pith)
 module.exports = { ArrayBark, ObjectBark, ReducerBark }
 
 if (require.main === module) {
-  ReducerBark()()((o, a, v, select) => {
+  ReducerBark()()(s => {
     // v('key', m.of(s => 'value$'))
-    o()('a')((o, a, v, state$) => {
-      o()('a')((o, a, v, state$) => {
-        v('key', s => 'value')
+    s.obj('a')(s => {
+      s.obj('a')(s => {
+        s('key', s => 'value')
       })
     })
-    a()('array')((o, a, v, select) => {
-      v(2, s => 42)
+    s.arr('array')(s => s(2, s => 42))
+    s.arr('array')(s => {
+      s(1, s => 41)
+      s(2, s => s - 1)
     })
-    a()('array')((o, a, v, select) => {
-      v(1, s => 41)
-      v(2, s => s - 1)
-    })
-    // select('array').observe(console.log.bind(console))
   })
   .tap(x => console.log(x))
   .take(10)

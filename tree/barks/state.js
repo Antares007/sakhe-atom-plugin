@@ -16,45 +16,23 @@ const eq = (a, b) => {
   return false
 }
 
-const CollectionBark = (pmap = id) => c => Bark(
+const ABark = (pmap = id) => (ft = () => ({})) => Bark(
   m.mergeArray,
   pith => function (m) {
+    const c = (t, k) => r => o => {
+      const a = r(o && o[k])
+      return Object.assign(t, o, {[k]: a})
+    }
     pmap(pith)(
-      pmap => key => pith => m(ObjectBark(pmap)(pith).map(c(key))),
-      pmap => key => pith => m(ArrayBark(pmap)(pith).map(c(key))),
-      (key, r) => m($(r).map(r => s => {
-        const ns = r(s)
-        if (eq(s, ns)) return s
-        return ns
-      }).map(c(key)))
+      pmap => key => pith => m(ABark(pmap)(() => ({}))(pith).map(c(ft(), key))),
+      pmap => key => pith => m(ABark(pmap)(() => ([]))(pith).map(c(ft(), key))),
+      (key, r) => m($(r).map(c(ft(), key)))
     )
   }
 )
 
-const ArrayBark = pmap => CollectionBark(pmap)(index => r => s => {
-  if (typeof s !== 'object' || s === null) {
-    const newarr = new Array(index + 1)
-    newarr.fill(void 0)
-    newarr[index] = r(s)
-    return newarr
-  }
-  const os = s[index]
-  const ns = r(os)
-  if (os === ns && index < s.length) return s
-  const l = Math.max(s.length, index + 1)
-  const b = new Array(l)
-  for (var i = 0; i < l; i++) {
-    b[i] = i === index ? ns : s[i]
-  }
-  return b
-})
-
-const ObjectBark = pmap => CollectionBark(pmap)(key => r => s => {
-  if (typeof s !== 'object' || s === null) return {[key]: r()}
-  const os = s[key]
-  const ns = r(os)
-  return (os === ns ? s : Object.assign({}, s, {[key]: ns}))
-})
+const ArrayBark = pmap => ABark(pmap)(() => ([]))
+const ObjectBark = pmap => ABark(pmap)(() => ({}))
 
 const stateRing = state$ => pith => {
   const select = (key, $ = state$.skipRepeats().multicast()) =>
@@ -85,11 +63,12 @@ const ReducerBark = (pmap = apiRing) => (initState = {}, type = ObjectBark) => (
     .multicast()
 }
 
-module.exports = { ArrayBark, ObjectBark, ReducerBark }
+module.exports = { ArrayBark, ObjectBark, ReducerBark, eq }
 
 if (require.main === module) {
   ReducerBark()()(s => {
     // v('key', m.of(s => 'value$'))
+    // s('key', s => 'value')
     s.obj('a')(s => {
       s.obj('a')(s => {
         s('key', s => 'value')

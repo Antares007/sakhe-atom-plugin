@@ -3,7 +3,7 @@ const {join: pathJoin} = require('path')
 const watch$ = require('./watch$')
 
 const PatchBark = require('../barks/patch')
-const {ReducerBark, ObjectBark} = require('../barks/state')
+const {ReducerBark} = require('../barks/state')
 
 PatchBark()(document.getElementById('root-node'))(h => {
   h('div.app1', Folder(pathJoin(__dirname, '../..')))
@@ -25,7 +25,7 @@ function Folder (path, s) {
     h(
       'ul',
       {style: h.css$` list-style-type: none; `},
-      ReducerBark()()((obj, arr, val, select) => {
+      ReducerBark(a => a)()((obj, arr, val, select) => {
         val(
           'pith',
           watch$(path).take(1)

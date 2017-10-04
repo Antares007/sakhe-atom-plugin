@@ -36,9 +36,11 @@ class WatchSource {
         .map(() => readdir(path))
         .startWith(readdir(path))
         .await()
-        .merge(m.fromEvent('error', watcher)
-          .take(1)
-          .flatMap(err => m.throwError(err))).source.run(sink, scheduler)
+        .merge(
+          m.fromEvent('error', watcher)
+            .take(1)
+            .flatMap(err => m.throwError(err))
+        ).source.run(sink, scheduler)
     ])
   }
 }

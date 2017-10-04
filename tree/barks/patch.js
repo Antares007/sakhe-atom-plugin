@@ -27,6 +27,7 @@ const apiRing = pith => (elm, txt, vnode, action$, path) => {
   h.$ = action$
   h.path = path
   h.css$ = css$
+  h.apiRing = apiRing
   pith(h)
 }
 
@@ -51,6 +52,7 @@ const PatchBark = (pmap = apiRing) => (elm) => pith => {
   }
   return H$(compose(addActionRing, pmap))(rootVnode.sel, rootVnode.data)(pith)
     .scan(patchVnode, rootVnode)
+    .skip(1)
 }
 
 module.exports = PatchBark

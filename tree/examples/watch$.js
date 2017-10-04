@@ -16,12 +16,12 @@ const readdir = path => _readdir(path).then(names => {
   return Promise.all(stats).then(() => s)
 })
 
-// pairwise :: a -> Stream a -> Stream (a, a)
-const pairwise = (initial, stream) => m.loop(
-  (prev, current) => ({ seed: current, value: [prev, current] }),
-  initial,
-  stream
-)
+// // pairwise :: a -> Stream a -> Stream (a, a)
+// const pairwise = (initial, stream) => m.loop(
+//   (prev, current) => ({ seed: current, value: [prev, current] }),
+//   initial,
+//   stream
+// )
 
 class WatchSource {
   constructor (path) {
@@ -30,20 +30,15 @@ class WatchSource {
   run (sink, scheduler) {
     const path = this.path
     const watcher = fs.watch(path)
-    const error$ = m.fromEvent('error', watcher)
-      .take(1)
-      .flatMap(err => m.throwError(err))
-    const change$ = pairwise(
-      {},
+    return dispose.all([
+      dispose.create(() => watcher.close()),
       m.fromEvent('change', watcher)
         .map(() => readdir(path))
         .startWith(readdir(path))
         .await()
-        .merge(error$)
-    )
-    return dispose.all([
-      dispose.create(() => watcher.close()),
-      change$.source.run(sink, scheduler)
+        .merge(m.fromEvent('error', watcher)
+          .take(1)
+          .flatMap(err => m.throwError(err))).source.run(sink, scheduler)
     ])
   }
 }

@@ -5,29 +5,44 @@ const {async: subject, hold} = require('most-subject')
 const id = a => a
 const compose = (...fns) => fns.reduce((f, g) => (...args) => f(g(...args)))
 
+const eq = (a, b) => {
+  if (a === b) return true
+  if (typeof a === 'object' && typeof b === 'object' && a !== null && b !== null) {
+    if (Array.isArray(b) && b.length === a.length && !b.some((li, i) => !eq(a[i], li))) return true
+    const akeys = Object.keys(a)
+    const bkeys = Object.keys(b)
+    return bkeys.length === akeys.length && !bkeys.some(key => !eq(a[key], b[key]))
+  }
+  return false
+}
+
 const CollectionBark = (pmap = id) => c => Bark(
   m.mergeArray,
   pith => function (m) {
     pmap(pith)(
       pmap => key => pith => m(ObjectBark(pmap)(pith).map(c(key))),
       pmap => key => pith => m(ArrayBark(pmap)(pith).map(c(key))),
-      (key, r) => m($(r).map(c(key)))
+      (key, r) => m($(r).map(r => s => {
+        const ns = r(s)
+        if (eq(s, ns)) return s
+        return ns
+      }).map(c(key)))
     )
   }
 )
 
 const ArrayBark = pmap => CollectionBark(pmap)(index => r => s => {
-  var b
-  if (!Array.isArray(s)) {
-    b = (new Array(index + 1)).fill(void 0)
-    b[index] = r(void 0)
-    return b
+  if (typeof s !== 'object' || s === null) {
+    const newarr = new Array(index + 1)
+    newarr.fill(void 0)
+    newarr[index] = r(s)
+    return newarr
   }
   const os = s[index]
   const ns = r(os)
   if (os === ns && index < s.length) return s
   const l = Math.max(s.length, index + 1)
-  b = new Array(l)
+  const b = new Array(l)
   for (var i = 0; i < l; i++) {
     b[i] = i === index ? ns : s[i]
   }

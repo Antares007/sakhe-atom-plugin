@@ -52,9 +52,9 @@ const stateRing = state$ => pith => {
   )
 }
 
-const ReducerBark = (pmap = id) => (initState = {}) => (pith) => {
+const ReducerBark = (pmap = id) => (initState = {}, type = ObjectBark) => (pith) => {
   const state$ = hold(1, subject())
-  return ObjectBark(compose(stateRing(state$), pmap))(pith)
+  return type(compose(stateRing(state$), pmap))(pith)
     .scan((s, r) => r(s), initState)
     .skip(1)
     .skipRepeats()

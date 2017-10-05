@@ -4,7 +4,6 @@ const Bark = require('./bark')
 const {async: subject, hold} = require('most-subject')
 const id = a => a
 const compose = (...fns) => fns.reduce((f, g) => (...args) => f(g(...args)))
-const eq = require('../eq')
 
 const c = (ft, k) => r => o => Object.assign(ft(), o, {[k]: r(o && o[k])})
 const ABark = (pmap = id) => (ft = () => ({})) => Bark(
@@ -16,7 +15,6 @@ const ABark = (pmap = id) => (ft = () => ({})) => Bark(
     )
   }
 )(m.mergeArray)
-const sRing = require('../rings/s-ring')
 
 const stateRing = select => pith => {
   return (obj, arr, val) => pith(
@@ -28,6 +26,8 @@ const stateRing = select => pith => {
       .skipRepeats()
   )
 }
+
+const sRing = require('../rings/s-ring')
 
 const ObjectBark = (pmap = sRing) => (select = _ => m.never()) =>
   ABark(compose(stateRing(select), pmap))(_ => ({}))

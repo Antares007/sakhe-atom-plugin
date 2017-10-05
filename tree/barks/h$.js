@@ -48,10 +48,6 @@ class VElement extends VNode {
 }
 
 const Element = (pmap = id) => (sel, data = {}) => Bark(
-  a$s => m.combineArray(
-    (sel, data, ...chlds) => new VElement(sel, data, chlds),
-    a$s
-  ),
   pith => c => {
     c(sel)
     c(data)
@@ -63,6 +59,8 @@ const Element = (pmap = id) => (sel, data = {}) => Bark(
     }))
     pmap(pith)(element, text, vnode)
   }
+)(
+  a$s => m.combineArray((s, d, ...chlds) => new VElement(s, d, chlds), a$s)
 )
 
 const pathRing = path => pith => function pathPith (elm, text, vnode) {

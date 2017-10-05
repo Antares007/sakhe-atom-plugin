@@ -41,7 +41,7 @@ PatchBark()(document.getElementById('root-node'))(h => {
             h('ul', h => {
               for (let name in lis) {
                 h('li', {key: name}, s.select(name, s.select('lis')).skipRepeats().map(li => h => {
-                  h(li.name)
+                  h(li.name + ' - ')
                   h(li.atime)
                   h(Math.random())
                 }))

@@ -1,18 +1,16 @@
 const m = require('most')
-const ATree = require('../atree')
 const $ = require('../$')
+const ATree = require('../atree')
+
+const Bark = pmap => deltac => pith => {
+  const run = ATree(pith => push => pmap(pith)(a => push($(a))))(deltac)
+  return (
+    typeof pith === 'function'
+    ? run(pith)
+    : pith instanceof m.Stream
+    ? pith.map(run).switchLatest()
+    : m.throwError(new Error('invalid pith'))
+  )
+}
 
 module.exports = Bark
-
-function Bark (deltac, pmap) {
-  const run = pith => ATree(deltac, (_, l) => pmap(pith)(a => l($(a))))
-  return pith => {
-    return (
-      typeof pith === 'function'
-      ? run(pith)
-      : pith instanceof m.Stream
-      ? pith.map(run).switchLatest()
-      : m.throwError(new Error('invalid pith'))
-    )
-  }
-}

@@ -38,14 +38,19 @@ PatchBark()(document.getElementById('root-node'))(h => {
         .filter(f => typeof f === 'function')
         .skipRepeats()
     )
+    return state$
+      .map(s => s.state).filter(Boolean)
+      .map(s => s.return).filter(a => typeof a !== 'undefined' && a !== null)
+      .skipRepeats()
   }
-  n('div', {}, {})((s, action$) => {
+  const rez$ = n('div', {}, {})((s, action$) => {
     s('a', s => 'hello from state')
+    s('return', s => 'hi from state')
     return s.select('a').filter(Boolean).map(a => (h, select) => {
       h(a)
     })
   })
-  h('hello')
+  h(rez$.startWith('hi'))
 })
 .drain()
 

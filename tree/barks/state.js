@@ -17,13 +17,15 @@ const ABark = (pmap = id) => (ft = () => ({})) => Bark(
 )(m.mergeArray)
 
 const stateRing = state$ => pith => {
-  const select = (key, $ = state$) =>
-    $.map(s => s[key]).filter(s => typeof s !== 'undefined' && s !== null)
+  const select = (state$, key) =>
+    state$.filter(s => typeof s !== 'undefined' && s !== null).map(s => s[key])
   return (obj, arr, val) => pith(
-    (pmap = id) => key => obj(compose(stateRing(select(key)), pmap))(key),
-    (pmap = id) => key => arr(compose(stateRing(select(key)), pmap))(key),
+    (pmap = id) => key => obj(compose(stateRing(select(state$, key)), pmap))(key),
+    (pmap = id) => key => arr(compose(stateRing(select(state$, key)), pmap))(key),
     val,
-    select
+    selectors => selectors.reduce(select, state$)
+      .filter(s => typeof s !== 'undefined')
+      .skipRepeats()
   )
 }
 
@@ -53,8 +55,8 @@ if (require.main === module) {
       s(1, s => 41)
       s(2, s => s - 1)
     })
-    s.select('key', s.select('a', s.select('a'))).tap(x => console.log(x)).drain()
-    s.select(2, s.select('array')).tap(x => console.log(x)).drain()
+    s.select(['a', 'a', 'key']).tap(x => console.log(x)).drain()
+    s.select(['array', 2]).tap(x => console.log(x)).drain()
   })
   .take(10)
   .drain()

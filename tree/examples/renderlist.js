@@ -16,16 +16,16 @@ const list$ = require('./watch$')(__dirname)
   }))
 PatchBark()(document.getElementById('root-node'))(h => {
   const rez$ = h.n('div', {}, {})((s, action$) => {
-    s('lis', list$.map(list => s => list.reduce((s, li) => {
+    s.put('lis', list$.map(list => list.reduce((s, li) => {
       s[li.name] = li
       return s
-    }, {})).map(s.keepEqs(_ => ({}))))
-    return s.select('lis')
+    }, {})))
+    return s.select(['lis'])
       .skipRepeatsWith((a, b) => eq(Object.keys(a).sort(), Object.keys(b).sort()))
       .map(lis => (h, select) => {
         h('ul', h => {
           for (let name in lis) {
-            h('li', {key: name}, select(name, select('lis')).skipRepeats().map(li => h => {
+            h('li', {key: name}, select(['lis', name]).map(li => h => {
               h(name)
               h(li.modestr)
               h(Math.random())

@@ -17,7 +17,6 @@ const eq = (a, b) => {
 }
 const c = (ft, k) => r => o => Object.assign(ft(), o, {[k]: r(o && o[k])})
 const ABark = (pmap = id) => (ft = () => ({})) => Bark(
-  m.mergeArray,
   pith => function (m) {
     pmap(pith)(
       pmap => key => pith => m(ABark(pmap)(_ => ({}))(pith).map(c(ft, key))),
@@ -25,7 +24,7 @@ const ABark = (pmap = id) => (ft = () => ({})) => Bark(
       (key, r) => m($(r).map(c(ft, key)))
     )
   }
-)
+)(m.mergeArray)
 
 const ArrayBark = pmap => ABark(pmap)(() => ([]))
 const ObjectBark = pmap => ABark(pmap)(() => ({}))

@@ -16,31 +16,40 @@ const ABark = (pmap = id) => (ft = () => ({})) => Bark(
     )
   }
 )(m.mergeArray)
+const sRing = require('../rings/s-ring')
 
-const stateRing = state$ => pith => {
-  const select = (key, $ = state$) =>
-    $.filter(a => typeof a !== 'undefined' && a !== null).map(s => s[key]).skipRepeats()
+const stateRing = select => pith => {
   return (obj, arr, val) => pith(
-    (pmap = id) => key => obj(compose(stateRing(select(key, state$)), pmap))(key),
-    (pmap = id) => key => arr(compose(stateRing(select(key, state$)), pmap))(key),
+    (pmap = id) => key => obj(compose(stateRing(k => select(k, select(key))), pmap))(key),
+    (pmap = id) => key => arr(compose(stateRing(k => select(k, select(key))), pmap))(key),
     val,
-    select
+    (key, $) => select(key, $)
+      .filter(a => typeof a !== 'undefined' && a !== null)
+      .skipRepeats()
   )
 }
 
+const ObjectBark = (pmap = sRing) => (select = _ => m.never()) =>
+  ABark(compose(stateRing(select), pmap))(_ => ({}))
+
+const ArrayBark = (pmap = sRing) => (select = _ => m.never()) =>
+  ABark(compose(stateRing(select), pmap))(_ => ([]))
+
 const ReducerBark =
-  (pmap = require('../rings/s-ring')) =>
+  (pmap = sRing) =>
   (initState = {}, ft = _ => ({})) =>
   (pith) => {
     const state$ = hold(1, subject())
-    return ABark(compose(stateRing(state$), pmap))(ft)(pith)
+    const select = (key, $ = state$) =>
+      $.filter(a => typeof a !== 'undefined' && a !== null).map(s => s[key])
+    return ABark(compose(stateRing(select), pmap))(ft)(pith)
       .scan((s, r) => r(s), ft()).skip(1)
       .tap(state$.next.bind(state$))
       .flatMapEnd(() => { state$.complete(); return m.empty() })
       .multicast()
   }
 
-module.exports = { ABark, ReducerBark, eq }
+module.exports = Object.assign(ReducerBark, { ObjectBark, ArrayBark, ReducerBark })
 
 if (require.main === module) {
   ReducerBark()()(s => {
@@ -54,8 +63,9 @@ if (require.main === module) {
       s(1, s => 41)
       s(2, s => s - 1)
     })
+    s.select('key', s.select('a', s.select('a'))).tap(x => console.log(x)).drain()
+    s.select(2, s.select('array')).tap(x => console.log(x)).drain()
   })
   .take(10)
-  .tap(x => console.log(x))
   .drain()
 }

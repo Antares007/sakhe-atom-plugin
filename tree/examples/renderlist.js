@@ -1,58 +1,43 @@
 // const m = require('most')
-
-const {ReducerBark, ObjectBark} = require('../barks/state')
-const H$ = require('../barks/h$')
+// const id = a => a
+// const watch$ = require('./watch$')
+const eq = require('../eq')
 const PatchBark = require('../barks/patch')
 
-const {Cons} = require('../list')
-// const id = a => a
-const $ = require('../$')
-// const watch$ = require('./watch$')
-// const eq = require('../eq')
-
+const list$ = require('./watch$')(__dirname)
+  .map(es => Object.keys(es).map(key => {
+    const stat = es[key]
+    const name = key
+    const size = stat.size
+    const mode = stat.mode
+    const mtime = stat.mtime.getTime()
+    // const isDir = stat.isDirectory()
+    return {name, size, mode, mtime, modestr: mode.toString(8)}
+  }))
 PatchBark()(document.getElementById('root-node'))(h => {
-  var i = 0
-  const n = (sel, data, initState) => shpith => {
-    const key = 'rnode' + (i++)
-    const state$ = ReducerBark()(initState)(s => {
-      var hpith$
-      s.obj('state')(s => {
-        hpith$ = shpith(s, h.$.filter(x => x.vnode.data.path.head === key))
+  const rez$ = h.n('div', {}, {})((s, action$) => {
+    s('lis', list$.map(list => s => list.reduce((s, li) => {
+      s[li.name] = li
+      return s
+    }, {})).map(s.keepEqs(_ => ({}))))
+    return s.select('lis')
+      .skipRepeatsWith((a, b) => eq(Object.keys(a).sort(), Object.keys(b).sort()))
+      .map(lis => (h, select) => {
+        h('ul', h => {
+          for (let name in lis) {
+            h('li', {key: name}, select(name, select('lis')).skipRepeats().map(li => h => {
+              h(name)
+              h(li.modestr)
+              h(Math.random())
+            }))
+          }
+        })
+        h(Math.random())
       })
-      s('pith', hpith$.map(hpith => () => h => {
-        h.vnode(
-          H$(h.ring)(
-            sel,
-            $(data).map(d => Object.assign({path: h.path}, d)),
-            Cons(key, h.path)
-          )(h => {
-            hpith(h, s.select('state'))
-          })
-        )
-      }))
-    })
-    h(
-      'div.rnode',
-      {key},
-      state$.map(s => s.pith)
-        .filter(f => typeof f === 'function')
-        .skipRepeats()
-    )
-    return state$
-      .map(s => s.state).filter(Boolean)
-      .map(s => s.return).filter(a => typeof a !== 'undefined' && a !== null)
-      .skipRepeats()
-  }
-  const rez$ = n('div', {}, {})((s, action$) => {
-    s('a', s => 'hello from state')
-    s('return', s => 'hi from state')
-    return s.select('a').filter(Boolean).map(a => (h, select) => {
-      h(a)
-    })
   })
   h(rez$.startWith('hi'))
 })
-.drain()
+  .drain()
 
 // PatchBark()(document.getElementById('root-node'))(h => {
 //   const node = (sel, data, list$, keymap, eq, limap) => {

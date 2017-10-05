@@ -1,6 +1,6 @@
 // const m = require('most')
 
-const {ReducerBark} = require('../barks/state')
+const {ReducerBark, ObjectBark} = require('../barks/state')
 const H$ = require('../barks/h$')
 const PatchBark = require('../barks/patch')
 
@@ -13,34 +13,34 @@ const $ = require('../$')
 PatchBark()(document.getElementById('root-node'))(h => {
   var i = 0
   const n = (sel, data, initState) => shpith => {
-    const key = 'n' + (i++)
+    const key = 'rnode' + (i++)
+    const state$ = ReducerBark()(initState)(s => {
+      var hpith$
+      s.obj('state')(s => {
+        hpith$ = shpith(s, h.$.filter(x => x.vnode.data.path.head === key))
+      })
+      s('pith', hpith$.map(hpith => () => h => {
+        h.vnode(
+          H$(h.ring)(
+            sel,
+            $(data).map(d => Object.assign({path: h.path}, d)),
+            Cons(key, h.path)
+          )(h => {
+            hpith(h, s.select('state'))
+          })
+        )
+      }))
+    })
     h(
-      'div.node',
+      'div.rnode',
       {key},
-      ReducerBark()(initState)(s => {
-        var hpith$
-        // debugger
-        // s('state', ABark)
-        s.obj('state', s => {
-          hpith$ = shpith(s, h.$.filter(x => x.vnode.data.path.head === key))
-        })
-        s('pith', hpith$.map(hpith => () => h => {
-          h.vnode(
-            H$(h.ring)(
-              sel,
-              $(data).map(d => Object.assign({path: h.path}, d)), Cons(key, h.path)
-            )(h => {
-              hpith(h, s.select('state'))
-            })
-          )
-        }))
-      }).map(s => s.pith)
+      state$.map(s => s.pith)
         .filter(f => typeof f === 'function')
         .skipRepeats()
     )
   }
   n('div', {}, {})((s, action$) => {
-    s('a', s => 'hello')
+    s('a', s => 'hello from state')
     return s.select('a').filter(Boolean).map(a => (h, select) => {
       h(a)
     })

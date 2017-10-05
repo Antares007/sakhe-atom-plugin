@@ -28,7 +28,6 @@ const hRing = pith => (elm, txt, vnode, action$, path) => {
       s.obj('state')(s => {
         hpith = shpith(s, h.$.filter(x => x.vnode.data.path.head === key))
       })
-      const state$ = hold(1, s.select('state').skipRepeats())
       s('pith', $(hpith).map(hpith => () => h => {
         h.vnode(
           H$(h.ring)(
@@ -36,7 +35,7 @@ const hRing = pith => (elm, txt, vnode, action$, path) => {
             $(data).map(d => Object.assign({path: h.path}, d)),
             Cons(key, h.path)
           )(h => {
-            hpith(h, (key, $ = state$) => s.select(key, $))
+            hpith(h, (selectors) => s.select(['state', ...selectors]))
           })
         )
       }))

@@ -16,6 +16,7 @@ const sRing = pith => (obj, arr, val, select) => {
   s.obj = obj(sRing)
   s.arr = arr(sRing)
   s.ring = sRing
+  s.put = (key, state$, ft = () => ({})) => val(key, state$.map(s => () => s).map(keepEqs(ft)))
   s.keepEqs = keepEqs
   pith(s)
 }

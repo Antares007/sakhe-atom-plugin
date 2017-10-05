@@ -1,6 +1,9 @@
 const nil = Object.create({
   toString () {
-    return 'Nil'
+    return 'nil/'
+  },
+  toArray () {
+    return []
   },
   endsWith (path) {
     return path === nil
@@ -17,7 +20,9 @@ function Cons (head, tail) {
   this.head = head
   this.tail = tail
 }
-
+Cons.prototype.toArray = function toArray () {
+  return [...this.tail.toArray(), this.head]
+}
 Cons.prototype.toString = function toString () {
   return `${this.head}/${this.tail.toString()}`
 }

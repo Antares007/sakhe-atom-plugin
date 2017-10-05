@@ -3,6 +3,7 @@ const css$ = require('../css$')
 const {ReducerBark} = require('../barks/state')
 const H$ = require('../barks/h$')
 const {Cons} = require('../list')
+const {hold} = require('most-subject')
 
 const hRing = pith => (elm, txt, vnode, action$, path) => {
   var i = 0
@@ -27,6 +28,7 @@ const hRing = pith => (elm, txt, vnode, action$, path) => {
       s.obj('state')(s => {
         hpith = shpith(s, h.$.filter(x => x.vnode.data.path.head === key))
       })
+      const state$ = hold(1, s.select('state').skipRepeats())
       s('pith', $(hpith).map(hpith => () => h => {
         h.vnode(
           H$(h.ring)(
@@ -34,11 +36,14 @@ const hRing = pith => (elm, txt, vnode, action$, path) => {
             $(data).map(d => Object.assign({path: h.path}, d)),
             Cons(key, h.path)
           )(h => {
-            hpith(h, k => s.select(k, s.select('state')))
+            hpith(h, (key, $ = state$) => s.select(key, $))
           })
         )
       }))
     })
+      .debounce(100)
+      .tap(x => console.info(x))
+
     h(
       'div.rnode',
       {key},

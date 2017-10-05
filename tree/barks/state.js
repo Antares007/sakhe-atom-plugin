@@ -16,40 +16,30 @@ const ABark = (pmap = id) => (ft = () => ({})) => Bark(
   }
 )(m.mergeArray)
 
-const stateRing = select => pith => {
+const stateRing = state$ => pith => {
+  const select = (key, $ = state$) =>
+    $.map(s => s[key]).filter(s => typeof s !== 'undefined' && s !== null)
   return (obj, arr, val) => pith(
-    (pmap = id) => key => obj(compose(stateRing(k => select(k, select(key))), pmap))(key),
-    (pmap = id) => key => arr(compose(stateRing(k => select(k, select(key))), pmap))(key),
+    (pmap = id) => key => obj(compose(stateRing(select(key)), pmap))(key),
+    (pmap = id) => key => arr(compose(stateRing(select(key)), pmap))(key),
     val,
-    (key, $) => select(key, $)
-      .filter(a => typeof a !== 'undefined' && a !== null)
-      .skipRepeats()
+    select
   )
 }
 
-const sRing = require('../rings/s-ring')
-
-const ObjectBark = (pmap = sRing) => (select = _ => m.never()) =>
-  ABark(compose(stateRing(select), pmap))(_ => ({}))
-
-const ArrayBark = (pmap = sRing) => (select = _ => m.never()) =>
-  ABark(compose(stateRing(select), pmap))(_ => ([]))
-
 const ReducerBark =
-  (pmap = sRing) =>
+  (pmap = require('../rings/s-ring')) =>
   (initState = {}, ft = _ => ({})) =>
   (pith) => {
     const state$ = hold(1, subject())
-    const select = (key, $ = state$) =>
-      $.filter(a => typeof a !== 'undefined' && a !== null).map(s => s[key])
-    return ABark(compose(stateRing(select), pmap))(ft)(pith)
+    return ABark(compose(stateRing(state$), pmap))(ft)(pith)
       .scan((s, r) => r(s), ft()).skip(1)
       .tap(state$.next.bind(state$))
       .flatMapEnd(() => { state$.complete(); return m.empty() })
       .multicast()
   }
 
-module.exports = Object.assign(ReducerBark, { ObjectBark, ArrayBark, ReducerBark })
+module.exports = { ReducerBark }
 
 if (require.main === module) {
   ReducerBark()()(s => {

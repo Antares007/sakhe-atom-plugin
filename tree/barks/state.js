@@ -4,17 +4,8 @@ const Bark = require('./bark')
 const {async: subject, hold} = require('most-subject')
 const id = a => a
 const compose = (...fns) => fns.reduce((f, g) => (...args) => f(g(...args)))
+const eq = require('../eq')
 
-const eq = (a, b) => {
-  if (a === b) return true
-  if (typeof a === 'object' && typeof b === 'object' && a !== null && b !== null) {
-    if (Array.isArray(b) && b.length === a.length && !b.some((li, i) => !eq(a[i], li))) return true
-    const akeys = Object.keys(a)
-    const bkeys = Object.keys(b)
-    return bkeys.length === akeys.length && !bkeys.some(key => !eq(a[key], b[key]))
-  }
-  return false
-}
 const c = (ft, k) => r => o => Object.assign(ft(), o, {[k]: r(o && o[k])})
 const ABark = (pmap = id) => (ft = () => ({})) => Bark(
   pith => function (m) {
@@ -26,9 +17,6 @@ const ABark = (pmap = id) => (ft = () => ({})) => Bark(
   }
 )(m.mergeArray)
 
-const ArrayBark = pmap => ABark(pmap)(() => ([]))
-const ObjectBark = pmap => ABark(pmap)(() => ({}))
-
 const stateRing = state$ => pith => {
   const select = (key, $ = state$) =>
     $.filter(a => typeof a !== 'undefined' && a !== null).map(s => s[key]).skipRepeats()
@@ -39,35 +27,20 @@ const stateRing = state$ => pith => {
     select
   )
 }
-const keepEqs = ft => r => o => {
-  const a = r(o)
-  if (typeof a === 'object' && a !== null && typeof o === 'object' && o !== null) {
-    return Object.keys(a).reduce((s, key) => {
-      s[key] = eq(o[key], a[key]) ? o[key] : a[key]
-      return s
-    }, ft())
-  }
-  return a
-}
-const apiRing = pith => (obj, arr, val, select) => {
-  const s = (...args) => val(...args)
-  s.select = select
-  s.obj = obj(apiRing)
-  s.arr = arr(apiRing)
-  s.apiRing = apiRing
-  s.keepEqs = keepEqs
-  pith(s)
-}
-const ReducerBark = (pmap = apiRing) => (initState = {}, type = ObjectBark) => (pith) => {
-  const state$ = hold(1, subject())
-  return type(compose(stateRing(state$), pmap))(pith)
-    .scan((s, r) => r(s), initState).skip(1)
-    .tap(state$.next.bind(state$))
-    .flatMapEnd(() => { state$.complete(); return m.empty() })
-    .multicast()
-}
 
-module.exports = { ABark, ArrayBark, ObjectBark, ReducerBark, eq }
+const ReducerBark =
+  (pmap = require('../rings/s-ring')) =>
+  (initState = {}, ft = _ => ({})) =>
+  (pith) => {
+    const state$ = hold(1, subject())
+    return ABark(compose(stateRing(state$), pmap))(ft)(pith)
+      .scan((s, r) => r(s), ft()).skip(1)
+      .tap(state$.next.bind(state$))
+      .flatMapEnd(() => { state$.complete(); return m.empty() })
+      .multicast()
+  }
+
+module.exports = { ABark, ReducerBark, eq }
 
 if (require.main === module) {
   ReducerBark()()(s => {

@@ -1,3 +1,4 @@
+const debug = require('debug')
 // const m = require('most')
 // const id = a => a
 // const watch$ = require('./watch$')
@@ -11,24 +12,29 @@ const list$ = require('./watch$')(__dirname)
     const size = stat.size
     const mode = stat.mode
     const mtime = stat.mtime.getTime()
-    // const isDir = stat.isDirectory()
     return {name, size, mode, mtime, modestr: mode.toString(8)}
-  }))
+  })).tap(debug('list$'))
+
 PatchBark()(document.getElementById('root-node'))(h => {
   const rez$ = h.n('div', {}, {})((s, action$) => {
     s.put('lis', list$.map(list => list.reduce((s, li) => {
       s[li.name] = li
       return s
-    }, {})))
+    }, {})).tap(debug('lis to put')))
+    s.put('return', 'result')
     return s.select(['lis'])
+      .filter(lis => Object.keys(lis).length > 0)
       .skipRepeatsWith((a, b) => eq(Object.keys(a).sort(), Object.keys(b).sort()))
       .map(lis => (h, select) => {
         h('ul', h => {
           for (let name in lis) {
             h('li', {key: name}, select(['lis', name]).map(li => h => {
               h(name)
+              h(' - ')
               h(li.modestr)
+              h(' - ')
               h(Math.random())
+              // h(new Date(li.mtime).toLocaleString())
             }))
           }
         })

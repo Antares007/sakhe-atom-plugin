@@ -5,8 +5,7 @@ const {ReducerBark} = require('../barks/state')
 const H$ = require('../barks/h$')
 const {Cons} = require('../list')
 
-const hRing = pith => (elm, txt, vnode, action$, path) => {
-  var i = 0
+const hRing = pith => (elm, txt, vnode, path, action$) => {
   const h = (...args) => (
     args.length === 1
     ? txt($(args[0]).map(a => a + ''))
@@ -21,12 +20,15 @@ const hRing = pith => (elm, txt, vnode, action$, path) => {
   h.path = path
   h.css$ = css$
   h.ring = hRing
-  h.n = (sel, data, initState) => shpith => {
+
+  var i = 0
+  h.n = (sel, data = {}, initState) => shpith => {
     const key = 'rnode' + i++
     const state$ = ReducerBark()(initState)(s => {
       var hpith
       s.obj('state')(s => {
-        hpith = shpith(s, h.$.filter(x => x.vnode.data.path.head === key))
+        const action$ = h.$.filter(x => x.vnode.data.path.head === key)
+        hpith = shpith(s, action$)
       })
       s('pith', $(hpith).map(hpith => () => h => {
         h.vnode(
@@ -39,7 +41,9 @@ const hRing = pith => (elm, txt, vnode, action$, path) => {
           })
         )
       }))
-    }).tap(debug('n state$')).multicast()
+    })
+      .tap(debug('n:state$'))
+      .multicast()
 
     h(
       'div.rnode',

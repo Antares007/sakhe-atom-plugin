@@ -1,9 +1,9 @@
+const debug = require('debug')
 const $ = require('../$')
 const css$ = require('../css$')
 const {ReducerBark} = require('../barks/state')
 const H$ = require('../barks/h$')
 const {Cons} = require('../list')
-const {hold} = require('most-subject')
 
 const hRing = pith => (elm, txt, vnode, action$, path) => {
   var i = 0
@@ -39,9 +39,7 @@ const hRing = pith => (elm, txt, vnode, action$, path) => {
           })
         )
       }))
-    })
-      .debounce(100)
-      .tap(x => console.info(x))
+    }).tap(debug('n state$')).multicast()
 
     h(
       'div.rnode',

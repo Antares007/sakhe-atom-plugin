@@ -1,14 +1,25 @@
 const eq = require('../eq')
-const keepEqs = ft => r => o => {
-  const a = r(o)
-  if (typeof a === 'object' && a !== null && typeof o === 'object' && o !== null) {
-    return Object.keys(a).reduce((s, key) => {
-      s[key] = eq(o[key], a[key]) ? o[key] : a[key]
+const put = a => () => a
+const keepEqs = ft => r => a => {
+  const b = r(a)
+  if (b === a) return a
+  if (typeof b === 'object' && b !== null && typeof a === 'object' && a !== null) {
+    const bkeys = Object.keys(b)
+    const akeys = Object.keys(a)
+    const nb = bkeys.reduce((s, key) => {
+      s[key] = eq(a[key], b[key]) ? a[key] : b[key]
       return s
     }, ft())
+    return (
+      akeys.length === bkeys.length && !akeys.some(key => a[key] !== nb[key])
+      ? a
+      : nb
+    )
   }
-  return a
+  return b
 }
+
+const $ = require('../$')
 
 const sRing = pith => (obj, arr, val, select) => {
   const s = (...args) => val(...args)
@@ -16,7 +27,7 @@ const sRing = pith => (obj, arr, val, select) => {
   s.obj = obj(sRing)
   s.arr = arr(sRing)
   s.ring = sRing
-  s.put = (key, state$, ft = () => ({})) => val(key, state$.map(s => () => s).map(keepEqs(ft)))
+  s.put = (key, state, ft = () => ({})) => val(key, $(state).map(put).map(keepEqs(ft)))
   s.keepEqs = keepEqs
   pith(s)
 }

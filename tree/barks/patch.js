@@ -25,8 +25,8 @@ const PatchBark = (pmap = require('../rings/h-ring')) => (elm) => pith => {
     pith(
       element,
       txt, vnode,
-      action$.filter(x => x.vnode.data.path.endsWith(path)),
-      path
+      path,
+      action$.filter(x => x.vnode.data.path.endsWith(path))
     )
   }
   return H$(compose(addActionRing, pmap))(rootVnode.sel, rootVnode.data)(pith)

@@ -1,5 +1,5 @@
+const id = a => a
 const eq = require('../eq')
-const put = a => () => a
 const keepEqs = ft => r => a => {
   const b = r(a)
   if (b === a) return a
@@ -21,15 +21,12 @@ const keepEqs = ft => r => a => {
 
 const $ = require('../$')
 
-const sRing = pith => (obj, arr, val, select) => {
-  const s = (...args) => val(...args)
-  s.select = select
-  s.obj = obj(sRing)
-  s.arr = arr(sRing)
-  s.ring = sRing
-  s.put = (key, state, ft = () => ({})) => val(key, $(state).map(put).map(keepEqs(ft)))
-  s.keepEqs = keepEqs
-  pith(s)
+const putRing = pith => (put, select) => {
+  pith(Object.assign({}, put, {
+    obj: (pmap = id) => put.obj(p => putRing(pmap(p))),
+    arr: (pmap = id) => put.arr(p => putRing(pmap(p))),
+    put: (key, state, ft = () => ({})) => put.val(key, $(state).map(a => () => a).map(keepEqs(ft)))
+  }), select)
 }
 
-module.exports = sRing
+module.exports = putRing

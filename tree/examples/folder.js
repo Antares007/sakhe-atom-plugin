@@ -25,7 +25,7 @@ function Folder (path, s) {
     h(
       'ul',
       {style: h.css$` list-style-type: none; `},
-      ReducerBark(a => a)()((obj, arr, val, select) => {
+      ReducerBark(a => a)()(({obj, arr, val, select}) => {
         val(
           'pith',
           watch$(path).take(1)

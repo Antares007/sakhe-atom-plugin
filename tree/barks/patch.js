@@ -10,7 +10,7 @@ const defaultModules = ['class', 'props', 'style', 'attributes'].map(
   name => require('snabbdom/modules/' + name).default
 )
 
-const PatchBark = (pmap = require('../rings/h-ring')) => (elm) => pith => {
+const PatchBark = (pmap = require('../rings/api')) => (elm) => pith => {
   const rootVnode = toVnode(elm)
   const action$ = subject()
   const patchVnode = init([
@@ -20,14 +20,12 @@ const PatchBark = (pmap = require('../rings/h-ring')) => (elm) => pith => {
       action$.next({ vnode: this, action, event })
     })
   ])
-  const addActionRing = pith => (elm, txt, vnode, path) => {
-    const element = (pmap = id) => elm(compose(addActionRing, pmap))
-    pith(
-      element,
-      txt, vnode,
-      path,
-      action$.filter(x => x.vnode.data.path.endsWith(path))
-    )
+  const addActionRing = pith => put => {
+    pith(Object.assign({}, put, {
+      element: (pmap = id) => put.element(p => addActionRing(pmap(p)))
+    }), {
+      action$: action$.filter(x => x.vnode.data.path.endsWith(put.path))
+    })
   }
   return H$(compose(addActionRing, pmap))(rootVnode.sel, rootVnode.data)(pith)
     .scan(patchVnode, rootVnode)

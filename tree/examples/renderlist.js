@@ -9,6 +9,7 @@ const {join: pathJoin} = require('path') // eslint-disable-line
 const PatchBark = require('../barks/patch')
 
 const nRing = require('../rings/n-ring')
+const apiRing = require('../rings/api')
 
 const Folder = path => nRing(h => { // eslint-disable-line
   h.n('div', {}, {})((s, action$) => {
@@ -43,18 +44,20 @@ const Folder = path => nRing(h => { // eslint-disable-line
       })
   })
 })
-PatchBark()(document.getElementById('root-node'))(nRing(h => {
-  h(h.$.tap(debug('root')).map(x => x.action).startWith('n/a'))
-  h.n('div.a')((s, action$) => {
-    s.put('count', action$.map(x => x.action).scan((s, a) => s + a, 0))
-    return (h, select) => {
-      h('button', {on: {click: +1}}, h => h('+'))
-      h('button', {on: {click: -1}}, h => h('-'))
-      h(select(['count']))
+PatchBark(p => nRing(apiRing(p)))(document.getElementById('root-node'))((put, select) => {
+  put.text(select.action$.tap(debug('root')).map(x => x.action + '').startWith('n/a'))
+  put.n('div.a', (enter, select) => {
+    // enter.val('count', select.action$.map(x => s => s + x.action)
+    //                                  .startWith(s => 0))
+    enter.put('count', select.action$.scan((c, x) => c + x.action, 0))
+    return (put, select) => {
+      put.element('button', {on: {click: +1}}, put => put.text('+'))
+      put.element('button', {on: {click: -1}}, put => put.text('-'))
+      put.text(select.path(['count']).map(n => n + ''))
     }
   })
-  h('div', Folder(pathJoin(__dirname, '..')))
-}))
+  // h('div', Folder(pathJoin(__dirname, '..')))
+})
   .drain()
 
 // PatchBark()(document.getElementById('root-node'))(h => {

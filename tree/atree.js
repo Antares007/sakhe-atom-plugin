@@ -2,7 +2,7 @@ const ATree = (pmap = a => a) => deltac => pith => {
   const as = []
   const push = a => as.push(a)
   const pull = () => as.pop()
-  pmap(pith)(push, pull)
+  pmap(pith)({push, pull})
   return deltac(as)
 }
 

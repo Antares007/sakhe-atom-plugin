@@ -4,25 +4,33 @@ const {Cons} = require('../list')
 
 const H$ = require('../barks/h$')
 const {ReducerBark} = require('../barks/state')
+const id = a => a
+const putRing = require('./put')
+const apiRing = require('./api')
 
-const nRing = pith => h => {
+const nRing = pith => (put, select) => {
+  const action$ = select.action$
   var i = 0
-  const n = (sel, data = {}, initState) => shpith => {
+  const n = (pmap = id) => (sel, data = {}, initState) => shpith => {
     const key = 'rnode' + i++
-    const state$ = ReducerBark()(initState)(s => {
+    const state$ = ReducerBark(p => putRing(apiRing(p)))(initState)((enter, select) => {
+      const selectPath = select.path
       var hpith
-      s.obj('state')(s => {
-        const action$ = h.$.filter(x => x.vnode.data.path.head === key)
-        hpith = shpith(s, action$)
+      enter.obj('state', (enter) => {
+        hpith = shpith(enter, {
+          action$: action$.filter(x => x.vnode.data.path.head === key)
+        })
       })
-      s('pith', $(hpith).map(hpith => () => h => {
-        h.vnode(
-          H$(h.ring)(
+      enter.val('pith', $(hpith).map(hpith => () => (put, select) => {
+        put.vnode(
+          H$(pmap)(
             sel,
-            $(data).map(d => Object.assign({path: h.path}, d)),
-            Cons(key, h.path)
-          )(h => {
-            hpith(h, (selectors) => s.select(['state', ...selectors]))
+            $(data).map(d => Object.assign({path: put.path}, d)),
+            Cons(key, put.path)
+          )((put, select) => {
+            hpith(put, Object.assign({}, select, {
+              path: (selectors) => selectPath(['state', ...selectors])
+            }))
           })
         )
       }))
@@ -30,22 +38,15 @@ const nRing = pith => h => {
       .tap(debug('n:state$'))
       .multicast()
 
-    h(
-      'div.rnode',
-      {key},
-      state$.map(s => s.pith)
-        .filter(f => typeof f === 'function')
-        .skipRepeats()
-    )
+    put.element()('div.node', {key})(state$.map(s => s.pith)
+                                        .filter(f => typeof f === 'function')
+                                        .skipRepeats())
     return state$
       .map(s => s.state).filter(Boolean)
       .map(s => s.return).filter(a => typeof a !== 'undefined' && a !== null)
       .skipRepeats()
   }
-  pith(Object.assign((...args) => h(...args), h, {
-    ring: nRing,
-    n
-  }))
+  pith(Object.assign({}, put, {n}), select)
 }
 
 module.exports = nRing

@@ -5,8 +5,8 @@ const sin$ = cycle$.map(i => Math.sin(i))
 const cos$ = cycle$.map(i => Math.cos(i))
 
 const PatchBark = require('../barks/patch')
-
-PatchBark()(document.getElementById('root-node'))(h => {
+const hApiRing = require('../rings/h-api')
+PatchBark(hApiRing)(document.getElementById('root-node'))(h => {
   h('div.app1', h => {
     h('div', showHideRing(Counter(0)))
     h('div', showHideRing(Counter(1)))

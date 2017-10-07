@@ -1,9 +1,9 @@
 const m = require('most')
 const $ = require('../$')
 const {Cons, nil} = require('../list')
-const Bark = require('./bark')
+const mBark = require('./m-bark')
 const id = a => a
-const compose = (...fns) => fns.reduce((f, g) => (...args) => f(g(...args)))
+const cmp = (...fns) => fns.reduce((f, g) => (...args) => f(g(...args)))
 
 class VNode {}
 
@@ -47,56 +47,60 @@ class VElement extends VNode {
   }
 }
 
-const Element = (pmap = id) => (sel, data = {}) => Bark(
-  pith => c => {
-    c(sel)
-    c(data)
-    const text = text => c($(text).map(text => new VText(text)))
-    const element = pmap => (sel, data) => pith => c(Element(pmap)(sel, data)(pith))
-    const vnode = vnode => c($(vnode).map(vnode => {
+const Element = (pmap = id) => (sel, data = {}) => mBark(
+  pith => ({put}) => {
+    put(sel)
+    put(data)
+    const element = pmap => (sel, data) => pith => put(Element(pmap)(sel, data)(pith))
+    const text = text => put($(text).map(text => new VText(text)))
+    const vnode = vnode => put($(vnode).map(vnode => {
       if (vnode instanceof VNode) return vnode
       throw new Error('invalid vnode')
     }))
-    pmap(pith)(element, text, vnode)
+    pmap(pith)({element, text, vnode})
   }
 )(
   a$s => m.combineArray((s, d, ...chlds) => new VElement(s, d, chlds), a$s)
 )
 
-const pathRing = path => pith => function pathPith (elm, text, vnode) {
+const pathRing = path => pith => function pathPith (put) {
   var i = 0
-  const element = (pmap = id) => (sel, data = {}) => pith => {
-    const key = i++
-    const thisPath = Cons(key, path)
-    elm(compose(pathRing(thisPath), pmap))(
-      sel, $(data).map(data => Object.assign({path, key}, data))
-    )(pith)
-  }
-  pith(element, text, vnode, path)
+  pith(Object.assign({}, put, {
+    element: (pmap = id) => (sel, data = {}) => pith => {
+      const key = i++
+      const thisPath = Cons(key, path)
+      put.element(cmp(pathRing(thisPath), pmap))(
+        sel, $(data).map(data => Object.assign({path, key}, data))
+      )(pith)
+    },
+    path
+  }))
 }
 
-const H$ = (pmap = id) => (sel, data = {}, path = nil) =>
-  Element(compose(pathRing(path), pmap))(sel, data)
+const H$ = (pmap = require('../rings/api')) => (sel, data = {}, path = nil) =>
+  Element(cmp(pathRing(path), pmap))(sel, data)
 
 module.exports = H$
 
 if (require.main === module) {
-  H$()('div.a')((elm, txt, vnode, path) => {
-    elm()('button', {on: {click: true}})((elm, txt) => {
-      elm()('button', {on: {click: true}})((elm, txt) => {
-        txt('hi2')
+  H$()('div.a')((put) => {
+    console.log(put.element.toString())
+    put.element('button', {on: {click: true}}, put => {
+      put.element('button', put => {
+        put.text('hello1')
       })
+      put.text('hello2')
     })
-    txt('hi')
-    vnode(H$()('div.a', {path}, Cons('mount1', path))((elm, txt, vnode) => {
-      elm()('li')(id)
-      elm()('button', {on: {click: true}})((elm, txt) => {
-        elm()('button', {on: {click: true}})((elm, txt) => {
-          txt('hi3')
+    console.log(put)
+    put.vnode(H$()('div.a', {path: put.path}, Cons('mount1', put.path))(put => {
+      put.element('li', id)
+      put.element('button', {on: {click: true}}, put => {
+        put.element('button', put => {
+          put.text('hello1')
         })
+        put.text('hello2')
       })
-      elm()('li')(id)
-      elm()('li')(id)
+      put.element('li', id)
     }))
   }).tap(v => v.log()).drain()
 }

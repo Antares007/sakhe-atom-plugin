@@ -1,6 +1,6 @@
 const m = require('most')
 const $ = require('../$')
-const Bark = require('./bark')
+const mBark = require('./m-bark')
 const {async: subject, hold} = require('most-subject')
 const id = a => a
 const cmp = (...fns) => fns.reduce((f, g) => (...args) => f(g(...args)))
@@ -12,32 +12,27 @@ const c = (ft, k) => r => a => {
   return Object.assign(ft(), a, {[k]: bk})
 }
 
-const ABark = (pmap = id) => (ft = () => ({})) => Bark(
-  pith => function (m) {
-    pmap(pith)(
-      pmap => key => pith => m(ABark(pmap)(_ => ({}))(pith).map(c(ft, key))),
-      pmap => key => pith => m(ABark(pmap)(_ => ([]))(pith).map(c(ft, key))),
-      (key, r) => m($(r).map(c(ft, key)))
-    )
-  }
-)(m.mergeArray)
+const ABark = (pmap = id) => (ft = () => ({})) => mBark(pith => ({put}) => pmap(pith)({
+  val: (key, r) => put($(r).map(c(ft, key))),
+  obj: pmap => key => pith => put(ABark(pmap)(_ => ({}))(pith).map(c(ft, key))),
+  arr: pmap => key => pith => put(ABark(pmap)(_ => ([]))(pith).map(c(ft, key)))
+}))(m.mergeArray)
 
 const stateRing = state$ => pith => {
   const select = ($, key) =>
     $.filter(s => typeof s !== 'undefined' && s !== null).map(s => s[key])
-  const stateHub$ = hold(1, state$)
-  return (obj, arr, val) => pith(
-    (pmap = id) => key => obj(cmp(stateRing(select(state$, key)), pmap))(key),
-    (pmap = id) => key => arr(cmp(stateRing(select(state$, key)), pmap))(key),
-    val,
-    selectors => selectors.reduce(select, stateHub$)
+  return put => pith(Object.assign({}, put, {
+    obj: (pmap = id) => key => put.obj(cmp(stateRing(select(state$, key)), pmap))(key),
+    arr: (pmap = id) => key => put.arr(cmp(stateRing(select(state$, key)), pmap))(key)
+  }), {
+    path: selectors => selectors.reduce(select, state$)
       .filter(s => typeof s !== 'undefined')
       .skipRepeats()
-  )
+  })
 }
 
 const ReducerBark =
-  (pmap = require('../rings/s-ring')) =>
+  (pmap = require('../rings/api')) =>
   (initState = {}, ft = _ => ({})) =>
   (pith) => {
     const state$ = hold(1, subject())
@@ -53,11 +48,15 @@ const ReducerBark =
 module.exports = { ReducerBark }
 
 if (require.main === module) {
-  ReducerBark()()(s => {
-    s.put('lis', m.periodic(100).scan(a => a + 1, 0).map(i => ({
-      // a: { k: 'v', d: { k: 'v', d: (i % 6) === 0 } },
-      b: { k: 'v', d: { k: 'v', d: (i % 30) === 0 }, c: (i % 30) === 0 }
-    })))
+  ReducerBark()()((s, select) => {
+    s.val('a', s => 'b')
+    s.obj('o', s => {
+      s.val('a', s => 'b')
+    })
+    s.arr('arr', (s, select) => {
+      s.val(1, s => 42)
+    })
+    select.path(['arr', 1]).observe(x => console.log(x))
   })
   .tap(x => console.log(x))
   .take(10)

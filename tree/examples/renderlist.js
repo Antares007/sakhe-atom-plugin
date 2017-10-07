@@ -8,7 +8,9 @@ const {join: pathJoin} = require('path') // eslint-disable-line
 // const id = a => a
 const PatchBark = require('../barks/patch')
 
-const Folder = path => h => { // eslint-disable-line
+const nRing = require('../rings/n-ring')
+
+const Folder = path => nRing(h => { // eslint-disable-line
   h.n('div', {}, {})((s, action$) => {
     s.put('lis', watch$(path).map(es =>
       Object.keys(es).reduce((s, key) => {
@@ -40,9 +42,8 @@ const Folder = path => h => { // eslint-disable-line
         })
       })
   })
-}
-
-PatchBark()(document.getElementById('root-node'))(h => {
+})
+PatchBark()(document.getElementById('root-node'))(nRing(h => {
   h(h.$.tap(debug('root')).map(x => x.action).startWith('n/a'))
   h.n('div.a')((s, action$) => {
     s.put('count', action$.map(x => x.action).scan((s, a) => s + a, 0))
@@ -53,8 +54,7 @@ PatchBark()(document.getElementById('root-node'))(h => {
     }
   })
   h('div', Folder(pathJoin(__dirname, '..')))
-  // Folder(__dirname + '/..')
-})
+}))
   .drain()
 
 // PatchBark()(document.getElementById('root-node'))(h => {

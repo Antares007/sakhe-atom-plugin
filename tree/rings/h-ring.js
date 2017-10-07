@@ -1,9 +1,5 @@
-const debug = require('debug')
 const $ = require('../$')
 const css$ = require('../css$')
-const {ReducerBark} = require('../barks/state')
-const H$ = require('../barks/h$')
-const {Cons} = require('../list')
 
 const hRing = pith => (elm, txt, vnode, path, action$) => {
   const h = (...args) => (
@@ -20,43 +16,6 @@ const hRing = pith => (elm, txt, vnode, path, action$) => {
   h.path = path
   h.css$ = css$
   h.ring = hRing
-
-  var i = 0
-  h.n = (sel, data = {}, initState) => shpith => {
-    const key = 'rnode' + i++
-    const state$ = ReducerBark()(initState)(s => {
-      var hpith
-      s.obj('state')(s => {
-        const action$ = h.$.filter(x => x.vnode.data.path.head === key)
-        hpith = shpith(s, action$)
-      })
-      s('pith', $(hpith).map(hpith => () => h => {
-        h.vnode(
-          H$(h.ring)(
-            sel,
-            $(data).map(d => Object.assign({path: h.path}, d)),
-            Cons(key, h.path)
-          )(h => {
-            hpith(h, (selectors) => s.select(['state', ...selectors]))
-          })
-        )
-      }))
-    })
-      .tap(debug('n:state$'))
-      .multicast()
-
-    h(
-      'div.rnode',
-      {key},
-      state$.map(s => s.pith)
-        .filter(f => typeof f === 'function')
-        .skipRepeats()
-    )
-    return state$
-      .map(s => s.state).filter(Boolean)
-      .map(s => s.return).filter(a => typeof a !== 'undefined' && a !== null)
-      .skipRepeats()
-  }
 
   pith(h)
 }

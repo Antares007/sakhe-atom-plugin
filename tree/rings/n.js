@@ -37,7 +37,7 @@ const nRing = pith => (put, select) => {
       .tap(debug('n:state$'))
       .multicast()
 
-    put.element()('div.node', {key})(state$.map(s => s.pith)
+    put.node()('div.node', {key})(state$.map(s => s.pith)
                                         .filter(f => typeof f === 'function')
                                         .skipRepeats())
     return state$

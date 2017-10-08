@@ -2,7 +2,7 @@ const m = require('most')
 const id = a => a
 
 const cssRing = pith => (put, select) => pith(
-  Object.assign({}, put, {element: (pmap = id) => put.element(p => cssRing(pmap(p)))}),
+  Object.assign({}, put, {node: (pmap = id) => put.node(p => cssRing(pmap(p)))}),
   Object.assign({}, select, {css$})
 )
 

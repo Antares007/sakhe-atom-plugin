@@ -5,9 +5,9 @@ const hApiRing = pith => cssRing((put, select) => {
     args.length === 1
     ? put.text(select.$(args[0]).map(a => a + ''))
     : args.length === 2
-    ? put.element(p => hApiRing(p))(args[0], {})(args[1])
+    ? put.node(p => hApiRing(p))(args[0], {})(args[1])
     : args.length === 3
-    ? put.element(p => hApiRing(p))(args[0], args[1])(args[2])
+    ? put.node(p => hApiRing(p))(args[0], args[1])(args[2])
     : put.text('h args error ' + JSON.stringify(args))
   )
   h.vnode = put.vnode

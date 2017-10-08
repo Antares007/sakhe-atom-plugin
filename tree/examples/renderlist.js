@@ -51,8 +51,8 @@ PatchBark(p => nRing(apiRing(p)))(document.getElementById('root-node'))((put, se
     //                                  .startWith(s => 0))
     enter.put('count', select.action$.scan((c, x) => c + x.action, 0))
     return (put, select) => {
-      put.element('button', {on: {click: +1}}, put => put.text('+'))
-      put.element('button', {on: {click: -1}}, put => put.text('-'))
+      put.node('button', {on: {click: +1}}, put => put.text('+'))
+      put.node('button', {on: {click: -1}}, put => put.text('-'))
       put.text(select.path(['count']).map(n => n + ''))
     }
   })

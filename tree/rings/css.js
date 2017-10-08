@@ -1,6 +1,12 @@
 const m = require('most')
+const id = a => a
 
-module.exports = css$
+const cssRing = pith => (put, select) => pith(
+  Object.assign({}, put, {element: (pmap = id) => put.element(p => cssRing(pmap(p)))}),
+  Object.assign({}, select, {css$})
+)
+
+module.exports = cssRing
 
 function camelCase (str) {
   const [first, ...last] = str.split('-')

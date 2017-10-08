@@ -4,9 +4,9 @@ const mostBark = require('./most')
 const id = a => a
 const cmp = (...fns) => fns.reduce((f, g) => (...args) => f(g(...args)))
 
-class VNode {}
+class VTree {}
 
-class VText extends VNode {
+class VText extends VTree {
   constructor (text) {
     super()
     if (typeof text !== 'string') throw new Error('invalid text')
@@ -17,13 +17,13 @@ class VText extends VNode {
   }
 }
 
-class VElement extends VNode {
+class VNode extends VTree {
   constructor (sel, data, children) {
     super()
     if (typeof sel !== 'string') throw new Error('invalid selector')
     if (typeof data !== 'object' || data === null) throw new Error('invalid data')
     if (!Array.isArray(children)) throw new Error('invalid children')
-    if (children.some(a => !(a instanceof VNode))) throw new Error('invalid child')
+    if (children.some(a => !(a instanceof VTree))) throw new Error('invalid child')
     this.sel = sel
     this.data = data
     this.children = children
@@ -46,29 +46,29 @@ class VElement extends VNode {
   }
 }
 
-const Element = (pmap = id) => (sel, data = {}) => mostBark(
+const Node = (pmap = id) => (sel, data = {}) => mostBark(
   pith => ({put}, select) => {
     put(select.$(sel))
     put(select.$(data))
-    const element = pmap => (sel, data) => pith => put(Element(pmap)(sel, data)(pith))
+    const node = pmap => (sel, data) => pith => put(Node(pmap)(sel, data)(pith))
     const text = text => put(select.$(text).map(text => new VText(text)))
     const vnode = vnode => put(select.$(vnode).map(vnode => {
-      if (vnode instanceof VNode) return vnode
+      if (vnode instanceof VTree) return vnode
       throw new Error('invalid vnode')
     }))
-    pmap(pith)({element, text, vnode}, select)
+    pmap(pith)({node, text, vnode}, select)
   }
 )(
-  a$s => m.combineArray((s, d, ...chlds) => new VElement(s, d, chlds), a$s)
+  a$s => m.combineArray((s, d, ...chlds) => new VNode(s, d, chlds), a$s)
 )
 
 const pathRing = path => pith => function pathPith (put, select) {
   var i = 0
   pith(Object.assign({}, put, {
-    element: (pmap = id) => (sel, data = {}) => pith => {
+    node: (pmap = id) => (sel, data = {}) => pith => {
       const key = i++
       const thisPath = Cons(key, path)
-      put.element(cmp(pathRing(thisPath), pmap))(
+      put.node(cmp(pathRing(thisPath), pmap))(
         sel, select.$(data).map(data => Object.assign({path, key}, data))
       )(pith)
     }
@@ -76,27 +76,27 @@ const pathRing = path => pith => function pathPith (put, select) {
 }
 
 const vnodeBark = (pmap = require('../rings/api')) => (sel, data = {}, path = nil) =>
-  Element(cmp(pathRing(path), pmap))(sel, data)
+  Node(cmp(pathRing(path), pmap))(sel, data)
 
 module.exports = vnodeBark
 
 if (require.main === module) {
   vnodeBark()('div.a')((put, select) => {
-    put.element('button', {on: {click: true}}, put => {
-      put.element('button', put => {
+    put.node('button', {on: {click: true}}, put => {
+      put.node('button', put => {
         put.text('hello1')
       })
       put.text('hello2')
     })
     put.vnode(vnodeBark()('div.a', {path: select.path}, Cons('mount1', select.path))(put => {
-      put.element('li', id)
-      put.element('button', {on: {click: true}}, put => {
-        put.element('button', put => {
+      put.node('li', id)
+      put.node('button', {on: {click: true}}, put => {
+        put.node('button', put => {
           put.text('hello1')
         })
         put.text('hello2')
       })
-      put.element('li', id)
+      put.node('li', id)
     }))
   }).tap(v => v.log()).drain()
 }

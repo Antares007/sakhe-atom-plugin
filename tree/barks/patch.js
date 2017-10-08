@@ -22,7 +22,7 @@ const PatchBark = (pmap = require('../rings/api')) => (elm) => pith => {
   ])
   const addActionRing = pith => (put, select) => {
     pith(Object.assign({}, put, {
-      element: (pmap = id) => put.element(p => addActionRing(pmap(p)))
+      node: (pmap = id) => put.node(p => addActionRing(pmap(p)))
     }), Object.assign({}, select, {
       action$: action$.filter(x => x.vnode.data.path.endsWith(select.path))
     }))

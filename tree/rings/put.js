@@ -19,13 +19,11 @@ const keepEqs = ft => r => a => {
   return b
 }
 
-const $ = require('../$')
-
 const putRing = pith => (put, select) => {
   pith(Object.assign({}, put, {
     obj: (pmap = id) => put.obj(p => putRing(pmap(p))),
     arr: (pmap = id) => put.arr(p => putRing(pmap(p))),
-    put: (key, state, ft = () => ({})) => put.val(key, $(state).map(a => () => a).map(keepEqs(ft)))
+    put: (key, state, ft = () => ({})) => put.val(key, select.$(state).map(a => () => a).map(keepEqs(ft)))
   }), select)
 }
 

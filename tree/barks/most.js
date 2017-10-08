@@ -1,14 +1,12 @@
 const m = require('most')
-const $ = require('../$')
-const ATree = require('../atree')
+const aTree = require('../atree')
 
 const mostBark = pmap => deltac => pith => {
-  const run = ATree(
-    pith => function mPith ({push, pull}) {
-      pmap(pith)({
-        put (a) { push($(a)) }
-      })
-    })(deltac)
+  const run = pith => aTree(deltac)(function mPith ({push, pull}) {
+    pmap(pith)({
+      put: a => push(a)
+    }, {$})
+  })
   return (
     typeof pith === 'function'
     ? run(pith)
@@ -19,3 +17,18 @@ const mostBark = pmap => deltac => pith => {
 }
 
 module.exports = mostBark
+
+function $ (x) {
+  return (
+    x instanceof m.Stream
+      ? x
+      : x && typeof x === 'object' && Object.keys(x).some(key => x[key] instanceof m.Stream)
+        ? m.combineArray(function () {
+          return Object.keys(x).reduce((s, key, i) => {
+            s[key] = arguments[i]
+            return s
+          }, {})
+        }, Object.keys(x).map(key => $(x[key])))
+        : m.of(x)
+  )
+}

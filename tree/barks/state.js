@@ -1,5 +1,4 @@
 const m = require('most')
-const $ = require('../$')
 const mostBark = require('./most')
 const {async: subject, hold} = require('most-subject')
 const id = a => a
@@ -12,23 +11,33 @@ const c = (ft, k) => r => a => {
   return Object.assign(ft(), a, {[k]: bk})
 }
 
-const ABark = (pmap = id) => (ft = () => ({})) => mostBark(pith => ({put}) => pmap(pith)({
-  val: (key, r) => put($(r).map(c(ft, key))),
-  obj: pmap => key => pith => put(ABark(pmap)(_ => ({}))(pith).map(c(ft, key))),
-  arr: pmap => key => pith => put(ABark(pmap)(_ => ([]))(pith).map(c(ft, key)))
-}))(m.mergeArray)
+const aBark = (pmap = id) => (ft = () => ({})) =>
+mostBark(pith => ({put}, select) => {
+  pmap(pith)({
+    val: (key, r) =>
+      put(select.$(r).map(c(ft, key))),
+    obj: pmap => key => pith =>
+      put(aBark(pmap)(_ => ({}))(pith).map(c(ft, key))),
+    arr: pmap => key => pith =>
+      put(aBark(pmap)(_ => ([]))(pith).map(c(ft, key)))
+  }, select)
+})(m.mergeArray)
 
 const stateRing = state$ => pith => {
   const select = ($, key) =>
     $.filter(s => typeof s !== 'undefined' && s !== null).map(s => s[key])
-  return put => pith(Object.assign({}, put, {
-    obj: (pmap = id) => key => put.obj(cmp(stateRing(select(state$, key)), pmap))(key),
-    arr: (pmap = id) => key => put.arr(cmp(stateRing(select(state$, key)), pmap))(key)
-  }), {
-    path: selectors => selectors.reduce(select, state$)
-      .filter(s => typeof s !== 'undefined')
-      .skipRepeats()
-  })
+  return (put, sray) => {
+    pith(Object.assign({}, put, {
+      obj: (pmap = id) => key =>
+        put.obj(cmp(stateRing(select(state$, key)), pmap))(key),
+      arr: (pmap = id) => key =>
+        put.arr(cmp(stateRing(select(state$, key)), pmap))(key)
+    }), Object.assign({}, sray, {
+      path: selectors => selectors.reduce(select, state$)
+        .filter(s => typeof s !== 'undefined')
+        .skipRepeats()
+    }))
+  }
 }
 
 const ReducerBark =
@@ -36,7 +45,7 @@ const ReducerBark =
   (initState = {}, ft = _ => ({})) =>
   (pith) => {
     const state$ = hold(1, subject())
-    return ABark(cmp(stateRing(state$), pmap))(ft)(pith)
+    return aBark(cmp(stateRing(state$), pmap))(ft)(pith)
       .scan((s, r) => r(s), ft())
       .skip(1)
       .skipRepeats()

@@ -8,7 +8,7 @@ const {join: pathJoin} = require('path') // eslint-disable-line
 // const id = a => a
 const PatchBark = require('../barks/patch')
 
-const nRing = require('../rings/n-ring')
+const nRing = require('../rings/n')
 const apiRing = require('../rings/api')
 
 const Folder = path => nRing(h => { // eslint-disable-line

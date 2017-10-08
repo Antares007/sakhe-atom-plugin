@@ -1,16 +1,16 @@
-const vnodeBark = require('./vnode')
+const vnodeBark = require('../vnode')
 const id = a => a
 const compose = (...fns) => fns.reduce((f, g) => (...args) => f(g(...args)))
 
 const {async: subject} = require('most-subject')
 const toVnode = require('snabbdom/tovnode').default
 const {init} = require('snabbdom')
-const createActionModule = require('../../lib/drivers/snabbdom/actionModule')
+const createActionModule = require('./action-module')
 const defaultModules = ['class', 'props', 'style', 'attributes'].map(
   name => require('snabbdom/modules/' + name).default
 )
 
-const PatchBark = (pmap = require('../rings/api')) => (elm) => pith => {
+const PatchBark = (pmap = require('../../rings/api')) => (elm) => pith => {
   const rootVnode = toVnode(elm)
   const action$ = subject()
   const patchVnode = init([

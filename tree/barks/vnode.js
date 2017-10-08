@@ -77,13 +77,13 @@ const pathRing = path => pith => function pathPith (put) {
   }))
 }
 
-const H$ = (pmap = require('../rings/api')) => (sel, data = {}, path = nil) =>
+const vnodeBark = (pmap = require('../rings/api')) => (sel, data = {}, path = nil) =>
   Element(cmp(pathRing(path), pmap))(sel, data)
 
-module.exports = H$
+module.exports = vnodeBark
 
 if (require.main === module) {
-  H$()('div.a')((put) => {
+  vnodeBark()('div.a')((put) => {
     console.log(put.element.toString())
     put.element('button', {on: {click: true}}, put => {
       put.element('button', put => {
@@ -92,7 +92,7 @@ if (require.main === module) {
       put.text('hello2')
     })
     console.log(put)
-    put.vnode(H$()('div.a', {path: put.path}, Cons('mount1', put.path))(put => {
+    put.vnode(vnodeBark()('div.a', {path: put.path}, Cons('mount1', put.path))(put => {
       put.element('li', id)
       put.element('button', {on: {click: true}}, put => {
         put.element('button', put => {

@@ -2,7 +2,7 @@ const debug = require('debug')
 const $ = require('../$')
 const {Cons} = require('../list')
 
-const H$ = require('../barks/h$')
+const vnodeBark = require('../barks/vnode')
 const {ReducerBark} = require('../barks/state')
 const id = a => a
 const putRing = require('./put')
@@ -23,7 +23,7 @@ const nRing = pith => (put, select) => {
       })
       enter.val('pith', $(hpith).map(hpith => () => (put, select) => {
         put.vnode(
-          H$(pmap)(
+          vnodeBark(pmap)(
             sel,
             $(data).map(d => Object.assign({path: put.path}, d)),
             Cons(key, put.path)

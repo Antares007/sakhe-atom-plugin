@@ -1,4 +1,4 @@
-const H$ = require('./h$')
+const vnodeBark = require('./vnode')
 const id = a => a
 const compose = (...fns) => fns.reduce((f, g) => (...args) => f(g(...args)))
 
@@ -27,7 +27,7 @@ const PatchBark = (pmap = require('../rings/api')) => (elm) => pith => {
       action$: action$.filter(x => x.vnode.data.path.endsWith(put.path))
     })
   }
-  return H$(compose(addActionRing, pmap))(rootVnode.sel, rootVnode.data)(pith)
+  return vnodeBark(compose(addActionRing, pmap))(rootVnode.sel, rootVnode.data)(pith)
     .scan(patchVnode, rootVnode)
     .skip(1)
 }

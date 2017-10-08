@@ -20,12 +20,12 @@ const PatchBark = (pmap = require('../rings/api')) => (elm) => pith => {
       action$.next({ vnode: this, action, event })
     })
   ])
-  const addActionRing = pith => put => {
+  const addActionRing = pith => (put, select) => {
     pith(Object.assign({}, put, {
       element: (pmap = id) => put.element(p => addActionRing(pmap(p)))
-    }), {
-      action$: action$.filter(x => x.vnode.data.path.endsWith(put.path))
-    })
+    }), Object.assign({}, select, {
+      action$: action$.filter(x => x.vnode.data.path.endsWith(select.path))
+    }))
   }
   return vnodeBark(compose(addActionRing, pmap))(rootVnode.sel, rootVnode.data)(pith)
     .scan(patchVnode, rootVnode)

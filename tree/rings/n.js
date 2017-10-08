@@ -1,5 +1,4 @@
 const debug = require('debug')
-const $ = require('../$')
 const {Cons} = require('../list')
 
 const vnodeBark = require('../barks/vnode')
@@ -21,12 +20,12 @@ const nRing = pith => (put, select) => {
           action$: action$.filter(x => x.vnode.data.path.head === key)
         })
       })
-      enter.val('pith', $(hpith).map(hpith => () => (put, select) => {
+      enter.val('pith', select.$(hpith).map(hpith => () => (put, select) => {
         put.vnode(
           vnodeBark(pmap)(
             sel,
-            $(data).map(d => Object.assign({path: put.path}, d)),
-            Cons(key, put.path)
+            select.$(data).map(d => Object.assign({path: select.path}, d)),
+            Cons(key, select.path)
           )((put, select) => {
             hpith(put, Object.assign({}, select, {
               path: (selectors) => selectPath(['state', ...selectors])

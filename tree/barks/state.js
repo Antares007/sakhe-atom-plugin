@@ -1,6 +1,6 @@
 const m = require('most')
 const $ = require('../$')
-const mBark = require('./m-bark')
+const mostBark = require('./most')
 const {async: subject, hold} = require('most-subject')
 const id = a => a
 const cmp = (...fns) => fns.reduce((f, g) => (...args) => f(g(...args)))
@@ -12,7 +12,7 @@ const c = (ft, k) => r => a => {
   return Object.assign(ft(), a, {[k]: bk})
 }
 
-const ABark = (pmap = id) => (ft = () => ({})) => mBark(pith => ({put}) => pmap(pith)({
+const ABark = (pmap = id) => (ft = () => ({})) => mostBark(pith => ({put}) => pmap(pith)({
   val: (key, r) => put($(r).map(c(ft, key))),
   obj: pmap => key => pith => put(ABark(pmap)(_ => ({}))(pith).map(c(ft, key))),
   arr: pmap => key => pith => put(ABark(pmap)(_ => ([]))(pith).map(c(ft, key)))

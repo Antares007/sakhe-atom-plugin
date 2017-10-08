@@ -1,7 +1,7 @@
 const m = require('most')
 const $ = require('../$')
 const {Cons, nil} = require('../list')
-const mBark = require('./m-bark')
+const mostBark = require('./most')
 const id = a => a
 const cmp = (...fns) => fns.reduce((f, g) => (...args) => f(g(...args)))
 
@@ -47,7 +47,7 @@ class VElement extends VNode {
   }
 }
 
-const Element = (pmap = id) => (sel, data = {}) => mBark(
+const Element = (pmap = id) => (sel, data = {}) => mostBark(
   pith => ({put}) => {
     put(sel)
     put(data)

@@ -2,7 +2,7 @@ const m = require('most')
 const $ = require('../$')
 const ATree = require('../atree')
 
-const mBark = pmap => deltac => pith => {
+const mostBark = pmap => deltac => pith => {
   const run = ATree(
     pith => function mPith ({push, pull}) {
       pmap(pith)({
@@ -18,4 +18,4 @@ const mBark = pmap => deltac => pith => {
   )
 }
 
-module.exports = mBark
+module.exports = mostBark

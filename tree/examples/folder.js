@@ -1,71 +1,56 @@
-const m = require('most')
-const {join: pathJoin} = require('path')
+// const m = require('most')
+const debug = require('debug')
 const watch$ = require('./watch$')
-
-const PatchBark = require('../barks/patch')
 const {ReducerBark} = require('../barks/state')
 
-PatchBark()(document.getElementById('root-node'))(h => {
-  h('div.app1', Folder(pathJoin(__dirname, '../..')))
-})
-  .debounce(100)
-  // .tap(x => x.log(x))
-  .drain()
+const {join: pathJoin} = require('path')
 
-  // size : 6148
-  // mode : 33188
-  // atime : Fri Sep 29 2017 17:08:08 GMT+0400 (GET)
-  // birthtime : Thu Sep 28 2017 19:03:54 GMT+0400 (GET)
-  // ctime : Thu Sep 28 2017 19:18:03 GMT+0400 (GET)
-  // mtime : Thu Sep 28 2017 19:18:03 GMT+0400 (GET)
-  //  isDirectory
+const PatchBark = require('../barks/patch')
+const cssRing = require('../rings/css')
+const apiRing = require('../rings/api')
 
-function Folder (path, s) {
-  return h => {
-    h(
+PatchBark(p => cssRing(apiRing(p)))(document.getElementById('root-node'))(
+  Folder(pathJoin(__dirname, '../..'))
+)
+// .tap(x => x.log())
+.drain()
+
+// ReducerBark()()((enter, select) => {
+//   enter.val('a', s => 'b')
+// }).observe(debug('state'))
+
+function Folder (path) {
+  return (put, select) => {
+    put.node(
       'ul',
-      {style: h.css$` list-style-type: none; `},
-      ReducerBark(a => a)()(({obj, arr, val, select}) => {
-        val(
-          'pith',
-          watch$(path).take(1)
-            .map(entries => Entries(path, entries))
-            .flatMapError(err => m.of(h => h('li', {}, h => h(err.message))))
-            .map(pith => s => pith)
-        )
-      }).tap(console.info.bind(console)).map(s => s.pith).filter(Boolean)
-    )
-  }
-}
-
-function Entries (basePath, entries) {
-  return h => {
-    for (let name in entries) {
-      let path = pathJoin(basePath, name)
-      let isDir = entries[name].isDirectory()
-      let actClose = [path, false]
-      let actOpen_ = [path, true]
-      const openClose$ = h.$
-        .filter(x => x.action === actClose || x.action === actOpen_)
-        .map(x => x.action[1])
-        .startWith(false)
-      h(
-        'li',
-        {key: name},
-        isDir
-        ? h => h(
-          'div',
-          openClose$.map(op => (
-            op
-            ? h => {
-              h('button', {on: {click: actClose}}, h => h('- ' + name))
-              h('div', {}, Folder(path))
+      {style: select.css$` list-style-type: none; `},
+      watch$(path).map(dir => (put, select) => {
+        for (let name in dir) {
+          let stat = dir[name]
+          let epath = pathJoin(path, name)
+          let actClose = [epath, false]
+          let actOpen_ = [epath, true]
+          const openClose$ = select.action$
+            .filter(x => x.action === actClose || x.action === actOpen_)
+            .map(x => x.action[1])
+            .startWith(false)
+          put.node('li', {key: name}, (put, select) => {
+            if (stat.isDirectory()) {
+              put.node('div', openClose$.map(op => (
+                  op
+                  ? put => {
+                    put.node('button', {on: {click: actClose}}, put => put.text('- ' + name))
+                    put.node('div', {}, Folder(epath))
+                  }
+                  : put => put.node('button', {on: {click: actOpen_}}, put => put.text('+ ' + name))
+                ))
+              )
+            } else {
+              put.text(name)
             }
-            : h => h('button', {on: {click: actOpen_}}, h => h('+ ' + name))
-          ))
-        )
-        : h => h(name)
-      )
-    }
+          })
+        }
+      })
+    )
   }
 }

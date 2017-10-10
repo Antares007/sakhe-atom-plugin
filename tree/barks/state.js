@@ -34,7 +34,7 @@ const stateRing = state$ => pith => {
         put.arr(cmp(stateRing(select(state$, key)), pmap))(key)
     }), Object.assign({}, sray, {
       path: selectors => selectors.reduce(select, state$)
-        .filter(s => typeof s !== 'undefined')
+        // .filter(s => typeof s !== 'undefined')
         .skipRepeats()
     }))
   }
@@ -46,10 +46,10 @@ const ReducerBark =
   (pith) => {
     const state$ = hold(1, subject())
     return aBark(cmp(stateRing(state$), pmap))(ft)(pith)
-      .scan((s, r) => r(s), ft())
-      .skip(1)
+      .scan((s, r) => r(s), initState)
       .skipRepeats()
       .tap(state$.next.bind(state$))
+      .skip(1)
       .flatMapEnd(() => { state$.complete(); return m.empty() })
       .multicast()
   }

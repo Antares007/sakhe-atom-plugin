@@ -7,7 +7,7 @@ const eq = (a, b) => {
     const bkeys = Object.keys(b)
     return bkeys.length === akeys.length && !bkeys.some(key => !eq(a[key], b[key]))
   }
-  return false
+  return typeof a === 'function' && typeof a === 'function'
 }
 
 module.exports = eq

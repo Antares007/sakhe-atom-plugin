@@ -28,11 +28,13 @@ class WatchSource {
     const error$ = m.fromEvent('error', watcher)
       .take(1)
       .flatMap(err => m.throwError(err))
+    const d = debug(path.slice(0, __dirname.length) + '/watcher')
+    d('started')
 
     return dispose.all([
       dispose.create(() => {
         watcher.close()
-        debug(path.slice(0, __dirname.length) + '/watcher')('closed')
+        d('closed')
       }),
       change$.merge(error$)
         .scan(

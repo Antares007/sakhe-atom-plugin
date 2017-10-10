@@ -1,4 +1,5 @@
 const m = require('most')
+const debug = require('debug')
 const dispose = require('most/lib/disposable/dispose')
 const fs = require('fs')
 const promisify = require('./promisify')
@@ -27,10 +28,11 @@ class WatchSource {
     const error$ = m.fromEvent('error', watcher)
       .take(1)
       .flatMap(err => m.throwError(err))
+
     return dispose.all([
       dispose.create(() => {
         watcher.close()
-        console.log('watcher for [' + path + '] closed')
+        debug(path.slice(0, __dirname.length) + '/watcher')('closed')
       }),
       change$.merge(error$)
         .scan(

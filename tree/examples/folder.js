@@ -9,14 +9,23 @@ const eq = require('../eq')
 const PatchBark = require('../barks/patch')
 const cssRing = require('../rings/css')
 const apiRing = require('../rings/api')
+const fs = require('fs')
 
 PatchBark(p => cssRing(apiRing(p)))(document.getElementById('root-node'))(
-  Folder(pathJoin(__dirname, '../..'))
+  Folder(
+    pathJoin(__dirname, '../..'),
+    require('./folder-state.json'),
+    initState => fs.writeFile(
+      pathJoin(__dirname, '/folder-state.json'),
+      JSON.stringify(initState),
+      (err) => err && console.log(err)
+    )
+  )
 )
 .tap(debug('patch'))
 .drain()
 
-function Folder (path, stateCb = () => {}, initState = { initStates: {}, op: {} }) {
+function Folder (path, initState = { initStates: {}, op: {} }, stateCb = () => {}) {
   const {sync} = require('most-subject')
 
   return (put, select) => {
@@ -36,7 +45,6 @@ function Folder (path, stateCb = () => {}, initState = { initStates: {}, op: {} 
           'initStates',
           stateProxy$
             .skipRepeatsWith(eq)
-            .map(([name, {initStates, op}]) => [name, {initStates, op}])
             .map(([name, state]) => s => Object.assign({}, s, {[name]: state}))
         )
 
@@ -61,7 +69,7 @@ function Folder (path, stateCb = () => {}, initState = { initStates: {}, op: {} 
                       put.node('button', {on: {click: actClose}}, put => put.text('- ' + name))
                       put.node('div', {},
                         initState$.map(initState =>
-                          Folder(epath, state => stateProxy$.next([name, state]), initState)
+                          Folder(epath, initState, state => stateProxy$.next([name, state]))
                         )
                       )
                     }
@@ -77,7 +85,6 @@ function Folder (path, stateCb = () => {}, initState = { initStates: {}, op: {} 
       })
         .tap(s => stateCb(s))
         .map(s => s.pith)
-        .filter(Boolean)
         .skipRepeats()
     )
   }

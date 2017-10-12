@@ -34,7 +34,7 @@ const stateRing = state$ => pith => {
         put.arr(cmp(stateRing(select(state$, key)), pmap))(key)
     }), Object.assign({}, sray, {
       path: selectors => selectors.reduce(select, state$)
-        // .filter(s => typeof s !== 'undefined')
+        .filter(s => typeof s !== 'undefined')
         .skipRepeats()
     }))
   }

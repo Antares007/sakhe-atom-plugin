@@ -1,51 +1,79 @@
-const debug = require('debug')
+// const m = require('most')
+const {sync} = require('most-subject')
+const debug = require('debug') // eslint-disable-line
 const {Cons} = require('../list')
 
 const vnodeBark = require('../barks/vnode')
 const {ReducerBark} = require('../barks/state')
 const id = a => a
-const putRing = require('./put')
-const apiRing = require('./api')
+const eq = require('../eq')
 
-const nRing = pith => (put, select) => {
-  const action$ = select.action$
-  var i = 0
-  const n = (pmap = id) => (sel, data = {}, initState) => shpith => {
-    const key = 'rnode' + i++
-    const state$ = ReducerBark(p => putRing(apiRing(p)))(initState)((enter, select) => {
-      const selectPath = select.path
-      var hpith
-      enter.obj('state', (enter) => {
-        hpith = shpith(enter, {
-          action$: action$.filter(x => x.vnode.data.path.head === key)
-        })
-      })
-      enter.val('pith', select.$(hpith).map(hpith => () => (put, select) => {
-        put.vnode(
-          vnodeBark(pmap)(
-            sel,
-            select.$(data).map(d => Object.assign({path: select.path}, d)),
-            Cons(key, select.path)
-          )((put, select) => {
-            hpith(put, Object.assign({}, select, {
-              path: (selectors) => selectPath(['state', ...selectors])
-            }))
-          })
-        )
-      }))
+const addActionRing = action$ => pith => (put, select) =>
+  pith(Object.assign({}, put, {
+    node: (pmap = id) => put.node(p => addActionRing(action$)(pmap(p)))
+  }), Object.assign({}, select, {
+    action$: action$.filter(x => x.vnode.data.path.endsWith(select.path))
+  }))
+
+const nRing = (initStates = {}, stateCb = () => {}, spmap = require('./api')) =>
+pith => (put, select) => {
+  const n = (pmap = id) => (sel, dta, key) => shpith => {
+    const ringPath = select.path
+    const data = select.$(dta).map(d => Object.assign({}, d, {path: ringPath}))
+    const path = Cons(key, ringPath)
+    const action$ = select.action$.filter(x => x.vnode.data.path.endsWith(path))
+    const vselect = Object.assign({}, select, {
+      path,
+      action$
     })
-      .tap(debug('n:state$'))
-      .multicast()
-
-    put.node()('div.node', {key})(state$.map(s => s.pith)
-                                        .filter(f => typeof f === 'function')
-                                        .skipRepeats())
-    return state$
-      .map(s => s.state).filter(Boolean)
-      .map(s => s.return).filter(a => typeof a !== 'undefined' && a !== null)
-      .skipRepeats()
+    const vnode$ = vnodeBark(addActionRing(action$))(sel, data, path)(
+      ReducerBark(spmap)(initStates[key] || {initStates: {}})((enter, select) => {
+        debug(key + '/shpith')(shpith)
+        var hpith
+        const stateProxy$ = sync()
+        enter.val('initStates', stateProxy$
+          .skipRepeatsWith((a, b) => eq(a, b, 2))
+          .map(([key, state]) => s => Object.assign({}, s, {[key]: state})
+        ))
+        enter.obj('state', (enter, sselect) => {
+          hpith = shpith(enter, sselect, vselect)
+        })
+        const chieldRing = pith => initStates => (put, select) => pmap(hpith)(
+          Object.assign({}, put, {
+            node: (pmap = id) => put.node(p => nRing(initStates, stateCb, spmap)(pmap(p))),
+            n: (pmap = id) => (sel, data, key) => shpith => {
+              put.n(pmap)(sel, data, key)(shpith)
+            }
+          }),
+          select
+        )
+        enter.val('pith', select.$(hpith).chain(hpith =>
+          select.path(['initStates'])
+            .take(1)
+            .tap(debug(key + '/initStates'))
+            .map(chieldRing(pith))
+            .map(pith => () => pith)
+        ))
+      })
+        .tap(debug(key + '/state'))
+        .tap(state => stateCb([
+          key,
+          Object.keys(state).reduce((s, k) => {
+            if (typeof state[k] === 'function') return s
+            s[k] = state[k]
+            return s
+          }, {})
+        ]))
+        .map(s => s.pith)
+        .filter(pith => typeof pith === 'function')
+        .skipRepeats()
+    )
+    put.vnode(vnode$)
   }
-  pith(Object.assign({}, put, {n}), select)
+  pith(Object.assign({}, put, {
+    node: (pmap = id) => put.node(p => nRing(initStates, stateCb, spmap)(pmap(p))),
+    n
+  }), select)
 }
 
 module.exports = nRing

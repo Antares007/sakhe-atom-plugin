@@ -1,5 +1,4 @@
 const eq = (a, b, iq = Infinity) => {
-  if (iq === 0) return false
   if (a === b) return true
   if (
     typeof a === 'object' && typeof b === 'object' &&
@@ -8,6 +7,7 @@ const eq = (a, b, iq = Infinity) => {
     if (
       a instanceof Date && b instanceof Date
     ) return a.getTime() === b.getTime()
+    if (iq === 0) return false
     if (
       Array.isArray(b) && b.length === a.length &&
       !b.some((li, i) => !eq(a[i], li, iq - 1))
@@ -19,7 +19,7 @@ const eq = (a, b, iq = Infinity) => {
       !bkeys.some(key => !eq(a[key], b[key], iq - 1))
     )
   }
-  return typeof a === 'function' && typeof a === 'function'
+  return false
 }
 
 module.exports = eq

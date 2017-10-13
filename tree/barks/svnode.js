@@ -25,65 +25,77 @@ const svnodeBark = (select, initState = {initStates: {}}, stateCb = id, spmap = 
     path,
     action$
   })
-  var lastState
-  const publishState = state => {
-    if (eq(lastState, state, 2)) return
-    const nstate = Object.assign({}, state)
-    delete nstate.pith
-    stateCb(nstate)
-    lastState = nstate
-  }
   const vnode$ = vnodeBark(addActionRing(action$))(sel, data, path)(
     ReducerBark(id)(initState)((enter, select) => {
       var vpith
       const stateProxy$ = sync()
       const next = stateProxy$.next.bind(stateProxy$)
-      enter.val('initStates', stateProxy$
-        // .skipRepeatsWith((a, b) => eq(a, b, 2))
-        .map(([key, state]) => s => Object.assign({}, s, {[key]: state}))
+      enter.val('initStates', stateProxy$.map(([key, state]) => s =>
+        Object.assign({}, s, {[key]: state}))
       )
+
       enter.obj(spmap)('state')((enter, sselect) => {
         vpith = svpith(enter, sselect, vselect)
       })
+
       const selectPath = select.path
-      enter.val('pith', select.$(vpith)
-                .map(vpith =>
-                  (function map (pith) {
-                    return (put, select) => pmap(pith)(
-                      Object.assign({}, put, {
-                        node: (pmap = id) => put.node(p => map(pmap(p))),
-                        snode: (pmap = id) => (sel, data, key) => svpith => {
-                          put.vnode(
-                            selectPath(['initStates', key]).take(1).map(initState =>
-                              svnodeBark(
-                                select,
-                                initState,
-                                s => next([key, s]),
-                                spmap
-                              )(pmap)(sel, data, key)(svpith)
-                            ).switchLatest()
-                          )
-                        }
-                      }),
-                      select
-                    )
-                  })(vpith)
-                ).map(pith => () => pith)
+      const chieldRing = pith => (put, select) => pmap(pith)(
+        Object.assign({}, put, {
+          node: (pmap = id) => put.node(p => chieldRing(pmap(p))),
+          snode: (pmap = id) => (sel, data, key) => svpith => {
+            put.vnode(
+              selectPath(['initStates', key]).take(1).map(initState =>
+                svnodeBark(
+                  select,
+                  initState,
+                  s => next([key, s]),
+                  spmap
+                )(pmap)(sel, data, key)(svpith)
+              ).switchLatest()
+            )
+          }
+        }),
+        select
       )
-    }).tap(debug(key + '/state'))
-      .tap(publishState)
+      enter.val('pith', select.$(vpith).map(chieldRing).map(pith => () => pith))
+    })
+      .tap(debug(key + '/S'))
+      .tap((lastState => state => {
+        const nstate = Object.assign({}, state)
+        delete nstate.pith
+        if (eq(lastState, nstate, 1)) return
+        stateCb(nstate)
+        lastState = nstate
+      })())
       .map(s => s.pith)
       .filter(pith => typeof pith !== 'undefined')
       .skipRepeats()
   )
   return vnode$
 }
-
+var i = 0
 module.exports = svnodeBark
 
 const PatchBark = require('../barks/patch')
 window.eq = eq
 PatchBark()(document.getElementById('root-node'))((put, select) => {
+  const n = (put, k) => put.snode('div.' + k, {}, k, (enter, sselect, vselect) => {
+    debug(k + '/spith')({enter, sselect, vselect})
+    enter.val('count', vselect.action$
+      .filter(x => typeof x.action === 'number')
+      .map(x => s => s + x.action)
+      .startWith(s => s || 0))
+    return showHideRing(put => {
+      debug(k + '/vpith')({put})
+      put.node('button', {on: {click: +1}}, put => put.text('+'))
+      put.node('button', {on: {click: -1}}, put => put.text('-'))
+      put.text(sselect.path(['count']).map(n => n + k))
+      if (i === 0) {
+        i++
+        n(put, 'd')
+      }
+    })
+  })
   put.vnode(svnodeBark(select)(apiRing)('div.a', {}, 'a')((enter, sselect, vselect) => {
     debug('a/spith')({enter, sselect, vselect})
     enter.val('count', vselect.action$
@@ -91,38 +103,14 @@ PatchBark()(document.getElementById('root-node'))((put, select) => {
       .map(x => s => s + x.action)
       .startWith(s => s || 0))
     return showHideRing(put => {
+      i = 0
       debug('a/vpith')({put})
       put.node('button', {on: {click: +1}}, put => put.text('+'))
       put.node('button', {on: {click: -1}}, put => put.text('-'))
       put.text(sselect.path(['count']).map(n => n + ''))
 
-      put.snode('div.b', {}, 'b', (enter, sselect, vselect) => {
-        debug('b/spith')({enter, sselect, vselect})
-        enter.val('count', vselect.action$
-          .filter(x => typeof x.action === 'number')
-          .map(x => s => s + x.action)
-          .startWith(s => s || 0))
-        return showHideRing(put => {
-          debug('b/vpith')({put})
-          put.node('button', {on: {click: +1}}, put => put.text('+'))
-          put.node('button', {on: {click: -1}}, put => put.text('-'))
-          put.text(sselect.path(['count']).map(n => n + ''))
-
-          put.snode('div.c', {}, 'c', (enter, sselect, vselect) => {
-            debug('c/spith')({enter, sselect, vselect})
-            enter.val('count', vselect.action$
-              .filter(x => typeof x.action === 'number')
-              .map(x => s => s + x.action)
-              .startWith(s => s || 0))
-            return showHideRing(put => {
-              debug('c/vpith')({put})
-              put.node('button', {on: {click: +1}}, put => put.text('+'))
-              put.node('button', {on: {click: -1}}, put => put.text('-'))
-              put.text(sselect.path(['count']).map(n => n + ''))
-            })
-          })
-        })
-      })
+      n(put, 'b')
+      n(put, 'c')
     })
   }))
 })

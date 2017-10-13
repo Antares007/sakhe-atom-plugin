@@ -24,8 +24,7 @@ mostBark(pith => ({put}, select) => {
 })(m.mergeArray)
 
 const stateRing = state$ => pith => {
-  const select = ($, key) =>
-    $.filter(s => typeof s !== 'undefined' && s !== null).map(s => s[key])
+  const select = ($, key) => $.map(s => s[key])
   return (put, sray) => {
     pith(Object.assign({}, put, {
       obj: (pmap = id) => key =>
@@ -33,8 +32,7 @@ const stateRing = state$ => pith => {
       arr: (pmap = id) => key =>
         put.arr(cmp(stateRing(select(state$, key)), pmap))(key)
     }), Object.assign({}, sray, {
-      path: selectors => selectors.reduce(select, state$)
-        .skipRepeats()
+      path: selectors => selectors.reduce(select, state$).skipRepeats()
     }))
   }
 }

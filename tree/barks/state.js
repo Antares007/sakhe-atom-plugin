@@ -19,7 +19,8 @@ mostBark(pith => ({put}, select) => {
     obj: pmap => key => pith =>
       put(aBark(pmap)(_ => ({}))(pith).map(c(ft, key))),
     arr: pmap => key => pith =>
-      put(aBark(pmap)(_ => ([]))(pith).map(c(ft, key)))
+      put(aBark(pmap)(_ => ([]))(pith).map(c(ft, key))),
+    put
   }, select)
 })(m.mergeArray)
 
@@ -38,31 +39,29 @@ const stateRing = state$ => pith => {
 }
 
 const ReducerBark =
-  (pmap = require('../rings/api')) =>
-  (initState = {}, ft = _ => ({})) =>
-  (pith) => {
-    const state$ = hold(1, subject())
-    return aBark(cmp(stateRing(state$), pmap))(ft)(pith)
-      .scan((s, r) => r(s), initState)
-      .skipRepeats()
-      .tap(state$.next.bind(state$))
-      .skip(1)
-      .flatMapEnd(() => { state$.complete(); return m.empty() })
-      .multicast()
-  }
+(pmap = require('../rings/api')) =>
+(initState = {}, ft = _ => ({})) =>
+(pith) => {
+  const state$ = hold(1, subject())
+  return aBark(cmp(stateRing(state$), pmap))(ft)(pith)
+    .scan((s, r) => r(s), initState)
+    .tap(state$.next.bind(state$))
+    .skip(1)
+    .flatMapEnd(() => { state$.complete(); return m.empty() })
+}
 
 module.exports = { ReducerBark }
 
 if (require.main === module) {
-  ReducerBark()()((s, select) => {
-    s.val('a', s => 'b')
-    s.obj('o', s => {
+  ReducerBark(id)({}, _ => ({}))((enter, select) => {
+    enter.val('a', s => 'b')
+    enter.obj('o', s => {
       s.val('a', s => 'b')
     })
-    s.arr('arr', (s, select) => {
-      s.val(1, s => 42)
+    enter.arr('arr', (enter, select) => {
+      enter.val(1, s => 42)
     })
-    select.path(['arr', 1]).observe(x => console.log(x))
+    enter.put(select.$(s => 42))
   })
   .tap(x => console.log(x))
   .take(10)

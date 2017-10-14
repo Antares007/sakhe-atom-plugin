@@ -1,5 +1,4 @@
-const debug = require('debug') // eslint-disable-line
-const m = require('most') // eslint-disable-line
+const debug = require('debug')
 const {sync} = require('most-subject')
 const vnodeBark = require('../barks/vnode')
 const {ReducerBark} = require('../barks/state')
@@ -12,6 +11,7 @@ const rchain = (ft, k) => r => a => {
   if (ak === bk) return a
   return Object.assign(ft(), a, {[k]: bk})
 }
+const rmap = (proxy$, f = id) => ({next: r => proxy$.next(s => f(r)(s))})
 
 const addActionRing = action$ => pith => (put, select) =>
   pith(Object.assign({}, put, {
@@ -21,43 +21,32 @@ const addActionRing = action$ => pith => (put, select) =>
   }))
 
 const svnodeBark =
-(select, rproxy$ = {next: id}) =>
+(select, initState, rproxy$ = {next: id}, ft) =>
 (pmap = id, spmap = apiRing) =>
-(sel, dta, key, initState, ft) =>
+(sel, dta, key) =>
 svpith => {
   const ringPath = select.path
   const data = select.$(dta).map(d => Object.assign({}, d, {path: ringPath, key}))
   const path = Cons(key, ringPath)
   const action$ = select.action$.filter(x => x.vnode.data.path.endsWith(path))
   const vselect = Object.assign({}, select, { path, action$ })
-  const rmap = (proxy$, f = id) => ({next: r => proxy$.next(s => f(r)(s))})
 
   return vnodeBark(addActionRing(action$))(sel, data, path)(
-    ReducerBark(id)(initState, ft)((enter, sselect) => {
+    ReducerBark(spmap)(initState, ft)((enter, sselect) => {
       const stateProxy$ = sync()
       enter.put(stateProxy$)
 
       const chieldRing = pith => (put, select) => {
-        const snode =
-        ft =>
-        (pmap = id, spmap) =>
-        (sel, dta, key) =>
-        svpith => {
+        const snode = ft => (pmap = id, spmap) => (sel, dta, key) => svpith => {
           put.vnode(
             sselect.path([key]).take(1).map(initState =>
               svnodeBark(
-                select, rmap(stateProxy$, rchain(ft, key))
-              )(
-                pmap, spmap
-              )(
-                sel, dta, key, initState, ft
-              )(
-                svpith
-              )
+                select, initState, rmap(stateProxy$, rchain(ft, key)), ft
+              )(pmap, spmap)(sel, dta, key)(svpith)
             ).switchLatest()
           )
         }
-        return pmap(pith)(
+        return pith(
           Object.assign({}, put, {
             node: (pmap = id) => put.node(p => chieldRing(pmap(p))),
             onode: snode(_ => ({})),
@@ -68,38 +57,38 @@ svpith => {
       }
       enter.put(
         sselect.$(svpith(enter, sselect, vselect))
-          .map(chieldRing)
+          .map(p => chieldRing(pmap(p)))
           .map(pith => s => { s.pith = pith; return s })
       )
     })
-    .tap(
-      (o => a => {
-        if (o === a) return
-        debug(key + '/next')(a)
-        o = a
-        rproxy$.next(() => {
-          if (!a.pith) return a
-          const b = Object.assign(ft(), a)
-          delete b.pith
-          return b
-        })
-      })(void 0)
-    )
+    .tap((o => a => {
+      if (o === a) return
+      o = a
+      const b = Object.assign(ft(), a)
+      delete b.pith
+      debug(key + '/next')(b)
+      rproxy$.next(() => b)
+    })(initState))
     .map(s => s.pith)
     .filter(pith => typeof pith !== 'undefined')
     .skipRepeats()
   )
 }
 
-const sRing = pith => (put, select) => {
-  const snode =
-  ft =>
-  (pmap, spmap = apiRing) =>
-  (sel, dta, key, initState, proxy$) =>
-  svpith =>
-  put.vnode(
-    svnodeBark(select, proxy$)(pmap, spmap)(sel, dta, key, initState, ft)(svpith)
-  )
+const sRing = (initState, proxy$ = {next: id}) => pith => (put, select) => {
+  var state = initState
+  const next$ = {
+    next: r => {
+      state = r(state)
+      proxy$.next((s => () => s)(state))
+    }
+  }
+  const snode = ft => (pmap, spmap) => (sel, dta, key) => svpith =>
+    put.vnode(
+      svnodeBark(
+        select, initState && initState[key], rmap(next$, rchain(ft, key)), ft
+      )(pmap, spmap)(sel, dta, key)(svpith)
+    )
   return pith(
     Object.assign({}, put, {
       onode: snode(() => ({})),

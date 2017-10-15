@@ -1,7 +1,7 @@
 module.exports = key => {
   var initState
   try {
-    initState = JSON.parse(window.localStorage.getItem(key))
+    initState = JSON.parse(window.localStorage.getItem(key) || void 0)
   } catch (err) {}
   const proxy$ = {
     next: r => {

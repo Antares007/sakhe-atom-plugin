@@ -1,22 +1,13 @@
 {
   "name": "sakhe",
-  "main": "./lib/arakela-world-count",
+  "main": "./lib/sakhe",
   "version": "0.3.1",
   "description": "sakhe",
   "keywords": [],
-  "repository": "https://github.com/antares007/sakhe",
+  "repository": "https://github.com/antares007/sakhe-atom-plugin",
   "license": "MIT",
   "engines": {
     "atom": ">=1.0.0 <2.0.0"
   },
-  "scripts": {
-    "start": "electron ."
-  },
-  "dependencies": {
-    "debug": "^3.1.0",
-    "most": "^1.7.2",
-    "most-proxy": "^3.3.0",
-    "most-subject": "^5.3.0",
-    "snabbdom": "^0.7.0"
-  }
+  "dependencies": {}
 }

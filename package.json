@@ -1,7 +1,7 @@
 {
   "name": "sakhe",
   "main": "./lib/sakhe",
-  "version": "0.4.0",
+  "version": "0.5.0",
   "description": "sakhe",
   "keywords": [],
   "repository": "https://github.com/antares007/sakhe-atom-plugin",
